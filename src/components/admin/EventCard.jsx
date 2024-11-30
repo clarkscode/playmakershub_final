@@ -67,6 +67,8 @@ const EventCard = ({
   // Function to handle accepting an event
   const handleAcceptEvent = async (eventId, organizerEmail, eventTitle) => {
     try {
+      // Get the admin's name from localStorage or sessionStorage
+      const adminName = localStorage.getItem("adminName") || "Admin";
       // Update the event status to 'Accepted'
       const { error } = await supabase
         .from("events")
@@ -89,7 +91,7 @@ const EventCard = ({
       const { error: updatesError } = await supabase.from("updates").insert([
         {
           update_type: `Added new events`,
-          updated_by: "Admin", // Replace with dynamic admin name if available
+          updated_by: adminName, // Replace with dynamic admin name if available
           date_time: new Date().toISOString(),
         },
       ]);

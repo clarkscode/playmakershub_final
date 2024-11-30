@@ -52,7 +52,7 @@ const AdminProfile = () => {
         .select("*")
         .eq("id", 1)
         .single();
-      console.log(joinData)
+      console.log(joinData);
       if (joinError) {
         toast.error("Error fetching join status: " + joinError.message);
       } else {
@@ -80,7 +80,9 @@ const AdminProfile = () => {
       } else {
         setJoinStatus(updatedStatus);
         toast.success(
-          `Join status successfully updated to ${updatedStatus ? "Open" : "Closed"}`
+          `Join status successfully updated to ${
+            updatedStatus ? "Open" : "Closed"
+          }`
         );
       }
     } catch (err) {
@@ -182,7 +184,7 @@ const AdminProfile = () => {
                   className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3"
                 />
               </div>
-              <div>
+              {/* <div>
                 <label className="block text-sm font-medium text-gray-700">
                   Musical Roles
                 </label>
@@ -194,7 +196,7 @@ const AdminProfile = () => {
                   disabled={!isEditing}
                   className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3"
                 />
-              </div>
+              </div> */}
             </div>
             <div className="flex justify-end space-x-4 mt-6">
               {isEditing ? (

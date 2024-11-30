@@ -41,6 +41,17 @@ const AdminLogin = () => {
     // Check if the use is logged-in and the user is an admin
     if (user && session) {
       try {
+        const { data: userDetails, error: userError } = await supabase
+          .from("users")
+          .select("first_name, last_name, user_type")
+          .eq("id", user.id)
+          .single();
+
+        if (userError || !userDetails) {
+          setError("Failed to fetch user details.");
+          return;
+        }
+
         // Fetch user_type from the database
         const userType = await fetchUserType(user.id);
 
@@ -49,10 +60,12 @@ const AdminLogin = () => {
           setError("Access denied: You do not have admin privileges.");
           return;
         }
+        const adminName = `${userDetails.first_name} ${userDetails.last_name}`;
 
         // Save the token based on rememberMe choice
         const tokenStorage = rememberMe ? localStorage : sessionStorage;
         tokenStorage.setItem("adminAuthToken", session.access_token);
+        tokenStorage.setItem("adminName", adminName);
 
         navigate("/admin/dashboard");
       } catch (fetchError) {

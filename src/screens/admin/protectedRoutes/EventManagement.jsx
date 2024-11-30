@@ -41,7 +41,7 @@ const EventManagement = () => {
         {/* Header Component */}
         <Header title="Event Management" />
         {/* Event Management Content */}
-        <div className="p-4 flex-1 overflow-hidden">
+        <div className="p-4 flex-1">
           {/* Tab Navigation */}
           <div
             className={`sticky top-0 z-10 flex bg-white rounded-lg p-2 stroke-[#A7A9C0] transition-all duration-300 ${
