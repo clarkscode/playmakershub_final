@@ -23,6 +23,7 @@ const BookingForm = ({
   const [chatMessages, setChatMessages] = useState([]);
   const [newMessage, setNewMessage] = useState("");
   const [isBookingPending, setIsBookingPending] = useState(false);
+  const [isChatResolved, setIsChatResolved] = useState(false);
 
   const isDisabled = isViewMode;
   const toggleBookingIDPopup = () => {
@@ -70,7 +71,12 @@ const BookingForm = ({
         .select("*")
         .eq("booking_id", bookingID)
         .order("timestamp", { ascending: true });
-      if (!error) setChatMessages(data);
+      if (!error) {
+        setChatMessages(data);
+        // Check if the chat is resolved
+        const resolved = data.some((msg) => msg.resolved === true);
+        setIsChatResolved(resolved);
+      }
     }
   };
 
@@ -102,13 +108,22 @@ const BookingForm = ({
           .on(
             "postgres_changes",
             {
-              event: "INSERT",
+              event: "*",
               schema: "public",
               table: "chats",
               filter: `booking_id=eq.${bookingID}`,
             },
             (payload) => {
-              setChatMessages((prev) => [...prev, payload.new]);
+              if (payload.eventType === "UPDATE") {
+                const { resolved } = payload.new;
+                if (resolved) {
+                  setIsChatResolved(true);
+                }
+              }
+
+              if (payload.eventType === "INSERT") {
+                setChatMessages((prev) => [...prev, payload.new]);
+              }
             }
           )
           .subscribe();
@@ -231,21 +246,32 @@ const BookingForm = ({
             })}
           </div>
 
-          <div className="flex">
-            <input
-              type="text"
-              value={newMessage}
-              onChange={(e) => setNewMessage(e.target.value)}
-              placeholder="Type your message"
-              className="flex-1 p-2 rounded-lg border border-gray-300"
-            />
-            <button
-              onClick={handleSendMessage}
-              className="ml-2 px-4 py-2 bg-[#B70039] text-white rounded-lg"
-            >
-              Send
-            </button>
-          </div>
+          {/* Show message if chat is resolved */}
+          {isChatResolved && (
+            <p className="text-red-500 text-center mb-2">
+              This conversation has been resolved. No further messages can be
+              sent.
+            </p>
+          )}
+
+          {/* Input and Send Button */}
+          {!isChatResolved && isBookingPending && (
+            <div className="flex">
+              <input
+                type="text"
+                value={newMessage}
+                onChange={(e) => setNewMessage(e.target.value)}
+                placeholder="Type your message"
+                className="flex-1 p-2 rounded-lg border border-gray-300"
+              />
+              <button
+                onClick={handleSendMessage}
+                className="ml-2 px-4 py-2 bg-[#B70039] text-white rounded-lg"
+              >
+                Send
+              </button>
+            </div>
+          )}
         </div>
       )}
 
