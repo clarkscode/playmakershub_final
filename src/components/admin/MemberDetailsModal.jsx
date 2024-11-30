@@ -6,6 +6,7 @@ const MemberDetailsModal = ({ member, onClose, onUpdate, onDelete }) => {
   const [editableMember, setEditableMember] = useState({ ...member });
 
   useEffect(() => {
+    console.log("editable members data", editableMember);
     const handleEsc = (event) => {
       if (event.key === "Escape") {
         onClose();
@@ -37,13 +38,27 @@ const MemberDetailsModal = ({ member, onClose, onUpdate, onDelete }) => {
   };
 
   const handleSaveChanges = () => {
-    const updatedData = {
+    const formattedData = {
       ...editableMember,
-      role: JSON.stringify(editableMember.role), // Convert array to JSON string
-      genre: JSON.stringify(editableMember.genre), // Convert array to JSON string
+      role: JSON.stringify(
+        Array.isArray(editableMember.role)
+          ? editableMember.role.map((r) => r.toLowerCase().trim())
+          : []
+      ), // Convert to lowercase and trim spaces
+      genre: JSON.stringify(
+        Array.isArray(editableMember.genre)
+          ? editableMember.genre.map((g) => g.toLowerCase().trim())
+          : []
+      ), // Convert to lowercase and trim spaces
+      email: editableMember.email.toLowerCase(), // Convert email to lowercase
+      mobile: editableMember.mobile.toLowerCase(), // Convert mobile to lowercase if applicable
     };
 
-    onUpdate(updatedData);
+    delete formattedData.totalParticipation;
+    delete formattedData.participation;
+
+    console.log("Data sent for update:", formattedData);
+    onUpdate(formattedData);
     setIsEditing(false);
   };
 
@@ -179,7 +194,7 @@ const MemberDetailsModal = ({ member, onClose, onUpdate, onDelete }) => {
                       ? "bg-[#40B267] py-1 px-3"
                       : member.status === "inactive"
                       ? "bg-[#FF9100] py-1 px-3"
-                      : member.status === "warning"
+                      : member.status === "probationary"
                       ? "bg-[#FB4B4E] py-1 px-3"
                       : ""
                   } text-sm`}
@@ -200,14 +215,15 @@ const MemberDetailsModal = ({ member, onClose, onUpdate, onDelete }) => {
               </p>
               {isEditing ? (
                 <input
+                  disabled
                   type="number"
                   name="events"
-                  value={editableMember.events}
+                  value={editableMember.totalParticipation}
                   onChange={handleInputChange}
                   className="bg-white text-gray-900 border rounded-md px-2 py-1 w-full"
                 />
               ) : (
-                <p>{member.events}</p>
+                <p>{member.totalParticipation}</p>
               )}
             </div>
             <div>

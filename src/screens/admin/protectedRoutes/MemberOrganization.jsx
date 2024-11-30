@@ -37,14 +37,18 @@ const MemberOrganization = () => {
   const [selectedMember, setSelectedMember] = useState(null);
   const [filter, setFilter] = useState("all");
 
+  // Pagination states
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 8;
+
   const loadMembers = async () => {
     try {
       setLoading(true); // Start loading
       const data = await fetchMembers();
       const list = data?.map((v) => ({
         ...v,
-        genre: JSON.parse(v.genre),
-        role: JSON.parse(v.role),
+        genre: JSON.parse(v.genre || []),
+        role: JSON.parse(v.role || []),
       }));
       if (list) {
         setMembers(list);
@@ -64,6 +68,13 @@ const MemberOrganization = () => {
     if (filter === "all") return true;
     return member.status === filter;
   });
+
+  // Calculate paginated members
+  const totalPages = Math.ceil(filteredMembers.length / itemsPerPage);
+  const paginatedMembers = filteredMembers.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
 
   const handleCreateAccount = () => {
     setIsModalOpen(true);
@@ -142,10 +153,24 @@ const MemberOrganization = () => {
 
   const handleUpdateMember = async (id, updatedData) => {
     try {
-      setLoading(true);
+      setLoading(true); // Show loading indicator
       console.log("Updating Member:", id, updatedData);
 
+      // Update the database
       await updateMember(id, updatedData);
+      // if (!updatedMember) {
+      //   toast.error("Failed to update member in database.");
+      //   return;
+      // }
+
+      // Update local state
+      setMembers((prevMembers) =>
+        prevMembers.map((member) =>
+          member.id === id ? { ...member, ...updatedData } : member
+        )
+      );
+
+      toast.success("Member updated successfully!");
       if (updatedData.status && updatedData.status !== "active") {
         console.log("here1");
         const member = members.find((member) => member.id === id);
@@ -153,9 +178,8 @@ const MemberOrganization = () => {
         const subject = "Account Status Update";
         const content = `Hello ${member.name},<br/><br/>
         This is to inform you that your account status has been updated to <b>${updatedData.status}</b>.
-        <br/><br/>If you have any questions, please contact support.<br/><br/>
-        Best regards,<br/>
-        Playmakers Admin`;
+        <br/><br/>If you have any questions, please contact playmakers admin.<br/><br/>
+        <p>Best regards,<br/>The Playmakers Family</p>`;
 
         const emailResponse = await sendEmail(recipientEmail, subject, content);
         console.log(emailResponse);
@@ -201,12 +225,12 @@ const MemberOrganization = () => {
   };
 
   return (
-    <div className="min-h-screen flex bg-[#FBEBF1]">
+    <div className="min-h-screen flex bg-[#FBEBF1] overflow-hidden">
       <Sidebar />
-      <div className="flex-1">
+      <div className="flex-1 flex flex-col">
         <Header title="Member Organization" />
 
-        <div className="px-8 py-4 flex items-center justify-between">
+        <div className="px-8 py-4 flex items-center justify-between ">
           {/* Filter Buttons */}
           <div className="flex space-x-4">
             {["all", "active", "inactive", "probationary"].map((status) => (
@@ -215,7 +239,10 @@ const MemberOrganization = () => {
                 className={`px-4 py-2 ${
                   filter === status ? "bg-gray-700 text-white" : "bg-gray-200"
                 } rounded-lg`}
-                onClick={() => setFilter(status)}
+                onClick={() => {
+                  setFilter(status);
+                  setCurrentPage(1);
+                }}
               >
                 {status.charAt(0).toUpperCase() + status.slice(1)} Members
               </button>
@@ -238,9 +265,14 @@ const MemberOrganization = () => {
             </p>
           </div>
         ) : (
-          <div className="px-4 py-10 flex flex-wrap">
-            {filteredMembers.map((member, idx) => {
-              console.log(member);
+          <div
+            className="px-4 py-10 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 overflow-y-auto"
+            style={{ maxHeight: "80vh" }}
+          >
+            {paginatedMembers.map((member, idx) => {
+              {
+                /* console.log("Current Members", member); */
+              }
               return (
                 <div
                   key={idx}
@@ -253,6 +285,28 @@ const MemberOrganization = () => {
             })}
           </div>
         )}
+        {/* Pagination Controls */}
+        <div className="flex justify-between items-center px-4 py-2">
+          <button
+            className="px-4 py-2 bg-gray-300 rounded-md disabled:opacity-50"
+            onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+            disabled={currentPage === 1}
+          >
+            Previous
+          </button>
+          <p className="text-sm">
+            Page {currentPage} of {totalPages}
+          </p>
+          <button
+            className="px-4 py-2 bg-gray-300 rounded-md disabled:opacity-50"
+            onClick={() =>
+              setCurrentPage((prev) => Math.min(prev + 1, totalPages))
+            }
+            disabled={currentPage === totalPages}
+          >
+            Next
+          </button>
+        </div>
       </div>
 
       {/* Modal for Adding Member */}

@@ -21,21 +21,27 @@ const MemberForm = ({
 
   const handleAddRole = () => {
     if (newRole) {
-      setRoles([...roles, newRole]);
+      setRoles([...roles, newRole.trim().toLowerCase()]); // Convert to lowercase and trim
       setNewRole("");
     }
   };
 
   const handleAddGenre = () => {
     if (newGenre) {
-      setGenres([...genres, newGenre]);
+      setGenres([...genres, newGenre.trim().toLowerCase()]); // Convert to lowercase and trim
       setNewGenre("");
     }
   };
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setNewMember((prevMember) => ({ ...prevMember, [name]: value }));
+    if (name === "mobile") {
+      // Allow only numeric values
+      const numericValue = value.replace(/\D/g, ""); // Remove non-digits
+      setNewMember((prevMember) => ({ ...prevMember, [name]: numericValue }));
+    } else {
+      setNewMember((prevMember) => ({ ...prevMember, [name]: value }));
+    }
   };
 
   const handleFileChange = (e) => {
@@ -69,7 +75,8 @@ const MemberForm = ({
     if (!newMember.password) {
       validationErrors.password = "Password is required.";
     } else if (newMember.password.length < 8) {
-      validationErrors.password = "Password must be at least 8 characters long.";
+      validationErrors.password =
+        "Password must be at least 8 characters long.";
     }
     setErrors(validationErrors);
     return Object.keys(validationErrors).length === 0;
@@ -100,12 +107,11 @@ const MemberForm = ({
         ...prev,
         profile_image: manualPublicURL,
       }));
-   
     } catch (error) {
       console.error("Error uploading profile picture:", error.message);
       toast.error("An error occurred during the upload.");
-    } finally{
-      setUploading(false)
+    } finally {
+      setUploading(false);
     }
   };
 
@@ -291,7 +297,7 @@ const MemberForm = ({
         disabled={loading}
         className="w-full bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600"
       >
-       {loading ? 'Submitting' : 'Submit'}
+        {loading ? "Submitting" : "Submit"}
       </button>
       <ToastContainer position="top-right" autoClose={3000} />
     </form>

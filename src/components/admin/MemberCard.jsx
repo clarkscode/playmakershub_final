@@ -4,14 +4,14 @@ const MemberCard = ({
   role,
   genre,
   mobile,
-  events,
+  // events,
   join_date,
   profile_image,
   status,
-  totalParticipation
+  totalParticipation,
 }) => {
   return (
-    <div className="bg-white rounded-lg shadow-md  w-80 mx-3 relative">
+    <div className="bg-white rounded-lg shadow-md  w-80 mx-3 relative mb-4">
       {/* Glowing pulsing circle */}
       <div
         className={`absolute top-4 right-4 w-4 h-4 rounded-full animate-pulse ${
@@ -19,14 +19,18 @@ const MemberCard = ({
             ? "bg-[#40B267] "
             : status === "inactive"
             ? "bg-[#FF9100] "
-            : status === "warning"
+            : status === "probationary"
             ? "bg-[#FB4B4E] "
             : ""
         }`}
       ></div>
       {/* Header Section with Image and Name */}
       <div className="pb-4 border-b border-[#FBEBF1] p-6">
-        <img src={profile_image} alt={name} className="w-14 h-14 rounded-full" />
+        <img
+          src={profile_image}
+          alt={name}
+          className="w-14 h-14 rounded-full"
+        />
         <div>
           <h3 className="mt-2 text-lg font-bold " title={name}>
             {name}
@@ -40,14 +44,18 @@ const MemberCard = ({
         <div>
           <p className="font-semibold">Genre:</p>
           <div className="flex space-x-2 mt-2">
-            {genre?.map((g, index) => (
-              <span
-                key={index}
-                className="bg-pink-200 text-pink-700 px-2 py-1  text-xs font-semibold"
-              >
-                {g}
-              </span>
-            ))}
+            {Array.isArray(genre) ? (
+              genre.map((g, index) => (
+                <span
+                  key={index}
+                  className="bg-pink-200 text-pink-700 px-2 py-1 text-xs font-semibold"
+                >
+                  {g}
+                </span>
+              ))
+            ) : (
+              <span className="text-gray-500">No genres available</span>
+            )}
           </div>
         </div>
 
@@ -55,14 +63,18 @@ const MemberCard = ({
         <div className="mt-4">
           <p className="font-semibold">Role:</p>
           <div className="flex space-x-2 mt-2">
-            {role.map((r, index) => (
-              <span
-                key={index}
-                className="bg-blue-200 text-blue-700 px-2 py-1 rounded-full text-xs font-semibold"
-              >
-                {r}
-              </span>
-            ))}
+            {Array.isArray(role) ? (
+              role.map((r, index) => (
+                <span
+                  key={index}
+                  className="bg-blue-200 text-blue-700 px-2 py-1 rounded-full text-xs font-semibold"
+                >
+                  {r}
+                </span>
+              ))
+            ) : (
+              <span className="text-gray-500">No roles available</span>
+            )}
           </div>
         </div>
 
@@ -74,7 +86,9 @@ const MemberCard = ({
           </div>
           <div className="flex justify-between">
             <span>Total Events Participated</span>
-            <span className="font-semibold text-gray-800">{totalParticipation}</span>
+            <span className="font-semibold text-gray-800">
+              {totalParticipation}
+            </span>
           </div>
           <div className="flex justify-between">
             <span>Email</span>

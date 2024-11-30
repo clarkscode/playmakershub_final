@@ -10,10 +10,12 @@ import OngoingEvents from "../../../components/admin/OngoingEvents";
 import Header from "../../../components/admin/Header";
 import Sidebar from "../../../components/admin/Sidebar";
 import { addEvent } from "../../../assets";
+import CreateEventModal from "../../../components/admin/Reusable/CreateEventModal";
 
 const EventManagement = () => {
   const [activeTab, setActiveTab] = useState("recentlyAdded");
   const [isScrolled, setIsScrolled] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   const handleTabChange = (tab) => {
     setActiveTab(tab);
@@ -22,6 +24,10 @@ const EventManagement = () => {
   const handleScroll = () => {
     const scrollTop = window.scrollY;
     setIsScrolled(scrollTop > 0);
+  };
+
+  const handleCreateEvent = (eventData) => {
+    console.log("Event Created:", eventData);
   };
 
   useEffect(() => {
@@ -54,6 +60,7 @@ const EventManagement = () => {
                   ? "absolute top-3 right-10"
                   : "hidden"
               }`}
+              onClick={() => setIsModalOpen(true)}
             >
               <img src={addEvent} width={50} height={50} alt="add event icon" />
             </button>
@@ -129,6 +136,12 @@ const EventManagement = () => {
           </div>
         </div>
       </div>
+      {/* Create Event Modal */}
+      <CreateEventModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        onSubmit={handleCreateEvent}
+      />
     </div>
   );
 };
