@@ -1,17 +1,10 @@
 import { useEffect, useState } from "react";
 import { supabase } from "../../database/supabase";
-import { useNavigate } from "react-router-dom";
-import { ToastContainer, toast } from "react-toastify";
 
 const DoneEvents = () => {
   const [events, setEvents] = useState([]);
   const [selectedEvent, setSelectedEvent] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [isJoinEnabled, setIsJoinEnabled] = useState(false);
-  const [popupVisible, setPopupVisible] = useState(false);
-
-  const navigate = useNavigate();
-  const togglePopup = () => setPopupVisible(!popupVisible);
 
   useEffect(() => {
     const fetchEvents = async () => {
@@ -62,24 +55,6 @@ const DoneEvents = () => {
         setLoading(false);
       }
     };
-    const fetchJoinStatus = async () => {
-      try {
-        const { data, error } = await supabase
-          .from("join")
-          .select("isOpen")
-          .single();
-
-        if (error) {
-          console.error("Error fetching join status:", error.message);
-        } else {
-          setIsJoinEnabled(data?.isOpen);
-        }
-      } catch (err) {
-        console.error("Unexpected error fetching join status:", err.message);
-      }
-    };
-
-    fetchJoinStatus();
 
     fetchEvents();
   }, []);
@@ -96,7 +71,6 @@ const DoneEvents = () => {
 
   return (
     <div className="p-6 -mt-12">
-      <ToastContainer />
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 p-10">
         {events.length > 0 ? (
           events.map((event) => (

@@ -15,15 +15,19 @@ const Events = () => {
           <button
             onClick={() => setActiveTab("past")}
             className={`${
-              activeTab === "past" ? "text-green-500 font-bold text-xl" : "text-white"
+              activeTab === "past"
+                ? "text-white font-bold text-xl"
+                : "text-white/85"
             }`}
           >
-            Approved Events
+            Past Events
           </button>
           <button
             onClick={() => setActiveTab("upcoming")}
             className={`${
-              activeTab === "upcoming" ? "text-red-500 font-bold text-xl" : "text-white"
+              activeTab === "upcoming"
+                ? "text-white font-bold text-xl"
+                : "text-white/85"
             }`}
           >
             Upcoming Events

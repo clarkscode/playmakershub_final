@@ -20,7 +20,6 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import AdminProtectedRoutes from "./utils/AdminProtectedRoutes";
 import NotFound from "./components/error/NotFound";
 import ChatPage from "./components/chat/Chatpage";
-import DoneEvents from "./components/playmakershub/DoneEvents";
 import Events from "./components/playmakershub/Events";
 
 import Join from "./components/playmakershub/Join";
@@ -40,8 +39,10 @@ const App = () => {
           <Route element={<UpcomingEvents />} path="/events/upcoming" />
           <Route element={<Events />} path="/events" />
         </Route>
-        <Route element={<Unauthenticated />} path="/homepage/events/published" />
-        <Route element={<DoneEvents />} path="/events/published" />
+        <Route
+          element={<Unauthenticated />}
+          path="/homepage/events/published"
+        />
         {/* playmakers admin */}
         <Route element={<AdminLogin />} path="/adminonly" />
         <Route element={<AdminProtectedRoutes />}>

@@ -342,215 +342,126 @@ const UnauthNavbar = () => {
     }
   }, [fetchedData]);
 
-  const openModal = (event) => {
-    setSelectedEvent(event);
-  };
-
-  const closeModal = () => {
-    setSelectedEvent(null);
-  };
-
-  const [activeTab, setActiveTab] = useState("");
-  
-  // const Spinner = () => (
-  //   <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
-  //     <div className="animate-spin rounded-full h-12 w-12 border-t-4 border-b-4 border-white"></div>
-  //   </div>
-  // );
-
-  // if (loading) return <Spinner />;
-
   return (
     <div className="">
       <div>
         <ToastContainer />
         <header className="flex items-center justify-between p-4 shadow-md py-1">
-        {/* Empty div to take up space on the left */}
-        <div className="flex-1"></div>
+          {/* Empty div to take up space on the left */}
+          <div className="flex-1"></div>
 
-        {/* Centered Navigation */}
-        <nav className="flex space-x-20">
-          <button
-            onClick={() => navigate("/about-us")}
-            className="text-[#FFFFFF] text-2xl font-medium hover:text-[#a83c70]"
-          >
-            About
-          </button>
-          <button
-            onClick={() => navigate("/homepage/events/published")}
-            className="text-[#FFFFFF] text-2xl font-medium hover:text-[#a83c70]"
-          >
-            Events
-          </button>
-          <button
-            onClick={() => navigate("/")}
-            className="text-[#FFFFFF] text-4xl font-bold"
-          >
-            Playmakers Hub
-          </button>
-          <button
-            onClick={togglePopup}
-            className="text-[#FFFFFF] text-2xl font-medium hover:text-[#a83c70]"
-          >
-            Booking
-          </button>
-          <button
-            disabled={!isJoinEnabled}
-            className={`text-[#FFFFFF] text-2xl font-medium ${
-              isJoinEnabled
-                ? "hover:text-[#a83c70]"
-                : "cursor-not-allowed text-gray-500"
-            }`}
-            onClick={() => {
-              if (isJoinEnabled) {
-                toast.info("Join functionality is coming soon!");
-              }
-            }}
-          >
-            Join us
-          </button>
-
-        </nav>
-
-        {/* Login button aligned to the right */}
-        <div className="flex-1 flex justify-end">
-          <button
-            onClick={() => navigate("/member/login")}
-            className="font-poppins px-6 py-2 bg-[#992d5e] text-[#ffffff] text-md font-bold hover:bg-[#a83c70] rounded-full"
-          >
-            Login
-          </button>
-        </div>
-      </header>
-        </div>
-
-      {/* Tab Buttons
-      <button
-            onClick={() => setActiveTab("past")}
-            className={`${
-              activeTab === "past" ? "text-red-500 font-bold text-xl" : "text-white"
-            }`}
-          >
-            Approved Events
-          </button> */}
-
-          {/* Event Grid
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 ">
-        {pastEvents.length > 0 ? (
-          pastEvents.map((event) => (
-            <div
-              key={event.event_id}
-              className="bg-gray-800 p-4 rounded shadow-md"
-            >
-              <h3 className="text-xl font-bold text-white">
-                {event.event_title}
-              </h3>
-              <p className="text-gray-400">
-                {new Date(event.start_date).toLocaleDateString()} -{" "}
-                {new Date(event.end_date).toLocaleDateString()} |{" "}
-                {event.bookings?.event_location || "Location not available"}
-              </p>
-              <p className="text-gray-300">
-                Organizer: {event.bookings?.organizer_first_name}{" "}
-                {event.bookings?.organizer_last_name}
-              </p>
-              <p
-                className="text-blue-500 cursor-pointer"
-                onClick={() => openModal(event)}
-              >
-                View Details
-              </p>
-            </div>
-          ))
-        ) : (
-          <p className="text-white">No past events available</p>
-        )}
-      </div> */}
-    <main>
-      {/* Pop-up Modal */}
-      {/* {selectedEvent && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
-          <div className="bg-gray-900 p-6 rounded-lg shadow-xl max-w-lg w-full text-white">
-            <h2 className="text-2xl font-bold">{selectedEvent.event_title}</h2>
-            <p className="text-gray-400">
-              {new Date(selectedEvent.start_date).toLocaleDateString()} -{" "}
-              {new Date(selectedEvent.end_date).toLocaleDateString()} |{" "}
-              {selectedEvent.bookings?.event_location || "Location not available"}
-            </p>
-            <p className="mt-2">
-              {selectedEvent.description ||
-                "No description available for this event."}
-            </p>
-            <p className="mt-4">
-              Organizer: {selectedEvent.bookings?.organizer_first_name}{" "}
-              {selectedEvent.bookings?.organizer_last_name}
-            </p>
+          {/* Centered Navigation */}
+          <nav className="flex space-x-20">
             <button
-              className="mt-6 bg-red-500 px-4 py-2 rounded text-white"
-              onClick={closeModal}
+              onClick={() => navigate("/about-us")}
+              className="text-[#FFFFFF] text-2xl font-medium hover:text-[#a83c70]"
             >
-                Close
+              About
+            </button>
+            <button
+              onClick={() => navigate("/homepage/events/published")}
+              className="text-[#FFFFFF] text-2xl font-medium hover:text-[#a83c70]"
+            >
+              Events
+            </button>
+            <button
+              onClick={() => navigate("/")}
+              className="text-[#FFFFFF] text-4xl font-bold"
+            >
+              Playmakers Hub
+            </button>
+            <button
+              onClick={togglePopup}
+              className="text-[#FFFFFF] text-2xl font-medium hover:text-[#a83c70]"
+            >
+              Booking
+            </button>
+            <button
+              disabled={!isJoinEnabled}
+              className={`text-[#FFFFFF] text-2xl font-medium ${
+                isJoinEnabled
+                  ? "hover:text-[#a83c70]"
+                  : "cursor-not-allowed text-gray-500"
+              }`}
+              onClick={() => {
+                if (isJoinEnabled) {
+                  toast.info("Join functionality is coming soon!");
+                }
+              }}
+            >
+              Join us
+            </button>
+          </nav>
+
+          {/* Login button aligned to the right */}
+          <div className="flex-1 flex justify-end">
+            <button
+              onClick={() => navigate("/member/login")}
+              className="font-poppins px-6 py-2 bg-[#992d5e] text-[#ffffff] text-md font-bold hover:bg-[#a83c70] rounded-full"
+            >
+              Login
             </button>
           </div>
-        </div>
-      )} */}
+        </header>
+      </div>
 
+      <main>
         {popupVisible && (
-        <div className="fixed inset-0 bg-grey bg-opacity-50 flex justify-center items-center z-50 backdrop-blur-lg">
-          <BookingForm
-            formData={formData}
-            handleChange={handleChange}
-            handleSubmit={handleSubmit}
-            handleEditSubmit={handleEditSubmit}
-            handleBookingIDSubmit={handleBookingIDSubmit}
-            enteredBookingID={enteredBookingID}
-            setEnteredBookingID={setEnteredBookingID}
-            captchaVerified={captchaVerified}
-            handleCaptchaVerify={handleCaptchaVerify}
-            modalRef={modalRef}
-            today={today}
-            isEditMode={isEditMode}
-            isViewMode={isViewMode}
-            onClose={onClose}
-            status={bookingStatus}
-          />
-        </div>
-      )}
-
-      {bookingID && (
-        <div className="fixed inset-0 bg-grey bg-opacity-50 flex justify-center items-center z-50 backdrop-blur-lg">
-          <div className="bg-[#36303C] p-8 rounded-lg shadow-lg w-1/3 relative">
-            <p className="text-xl text-white mb-4">
-              Booking Successfully Sent!
-            </p>
-            <div className="flex items-center mb-4">
-              <p className="text-sm text-gray-300 mr-2">Your Booking ID:</p>
-              <FaInfoCircle
-                onMouseEnter={() => setShowTooltip(true)}
-                onMouseLeave={() => setShowTooltip(false)}
-                className="text-gray-300 cursor-pointer"
-              />
-              {showTooltip && (
-                <div className="absolute top-0 right-12 w-64 bg-gray-700 text-white text-sm p-2 rounded-lg shadow-md">
-                  Keep this booking ID. You will need this whenever you want to
-                  edit, or clarify your booking.
-                </div>
-              )}
-            </div>
-            <div className="flex items-center">
-              <p className="text-lg text-[#C1C2D3] font-semibold mr-2">
-                Booking ID has been sent to your email
-              </p>
-            </div>
-            <button
-              onClick={() => setBookingID(null)}
-              className="w-full bg-[#b70039] text-white py-2 rounded-lg cursor-pointer mt-4"
-            >
-              OK
-            </button>
+          <div className="fixed inset-0 bg-grey bg-opacity-50 flex justify-center items-center z-50 backdrop-blur-lg">
+            <BookingForm
+              formData={formData}
+              handleChange={handleChange}
+              handleSubmit={handleSubmit}
+              handleEditSubmit={handleEditSubmit}
+              handleBookingIDSubmit={handleBookingIDSubmit}
+              enteredBookingID={enteredBookingID}
+              setEnteredBookingID={setEnteredBookingID}
+              captchaVerified={captchaVerified}
+              handleCaptchaVerify={handleCaptchaVerify}
+              modalRef={modalRef}
+              today={today}
+              isEditMode={isEditMode}
+              isViewMode={isViewMode}
+              onClose={onClose}
+              status={bookingStatus}
+            />
           </div>
-        </div>
-      )}
+        )}
+
+        {bookingID && (
+          <div className="fixed inset-0 bg-grey bg-opacity-50 flex justify-center items-center z-50 backdrop-blur-lg">
+            <div className="bg-[#36303C] p-8 rounded-lg shadow-lg w-1/3 relative">
+              <p className="text-xl text-white mb-4">
+                Booking Successfully Sent!
+              </p>
+              <div className="flex items-center mb-4">
+                <p className="text-sm text-gray-300 mr-2">Your Booking ID:</p>
+                <FaInfoCircle
+                  onMouseEnter={() => setShowTooltip(true)}
+                  onMouseLeave={() => setShowTooltip(false)}
+                  className="text-gray-300 cursor-pointer"
+                />
+                {showTooltip && (
+                  <div className="absolute top-0 right-12 w-64 bg-gray-700 text-white text-sm p-2 rounded-lg shadow-md">
+                    Keep this booking ID. You will need this whenever you want
+                    to edit, or clarify your booking.
+                  </div>
+                )}
+              </div>
+              <div className="flex items-center">
+                <p className="text-lg text-[#C1C2D3] font-semibold mr-2">
+                  Booking ID has been sent to your email
+                </p>
+              </div>
+              <button
+                onClick={() => setBookingID(null)}
+                className="w-full bg-[#b70039] text-white py-2 rounded-lg cursor-pointer mt-4"
+              >
+                OK
+              </button>
+            </div>
+          </div>
+        )}
       </main>
     </div>
   );

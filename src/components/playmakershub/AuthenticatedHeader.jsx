@@ -236,9 +236,9 @@ const AuthenticatedHeader = () => {
         </button>
       </nav>
 
-      <div className="relative">
+      <div className="relative ">
         {/* User Profile Image */}
-        <div className="flex gap-1 items-center w-40">
+        <div className="flex gap-1 items-center w-40 ">
           <img
             src={
               memberDetails?.profile_image || "https://via.placeholder.com/40"
