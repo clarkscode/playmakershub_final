@@ -22,6 +22,9 @@ import ChatPage from "./components/chat/Chatpage";
 import DoneEvents from "./components/playmakershub/DoneEvents";
 import Events from "./components/playmakershub/Events";
 
+import Join from "./components/playmakershub/Join";
+import AboutUs from "./components/playmakershub/AboutUs";
+
 const App = () => {
   return (
     <BrowserRouter>
@@ -29,6 +32,8 @@ const App = () => {
         {/* playmakershub */}
         <Route element={<Homepage />} path="/" />
         <Route element={<MembersLogin />} path="/member/login" />
+        <Route element={<AboutUs />} path="/about-us" />
+        <Route element={<Join />} path="/join" />
         <Route element={<ProtectedRoutes />}>
           <Route element={<PlaymakersHome />} path="/playmakershub" />
           <Route element={<UpcomingEvents />} path="/events/upcoming" />

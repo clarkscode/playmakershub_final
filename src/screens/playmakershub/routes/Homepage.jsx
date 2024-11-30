@@ -346,38 +346,44 @@ const Homepage = () => {
     <div className="bg-Radial h-screen bg-[#000000]">
       <ToastContainer />
       <header className="flex items-center justify-between p-4 shadow-md py-1">
-        <nav className="flex justify-center space-x-20 w-full">
+        {/* Empty div to take up space on the left */}
+        <div className="flex-1"></div>
+
+        {/* Centered Navigation */}
+        <nav className="flex space-x-20">
+          <button
+            onClick={() => navigate("/about-us")}
+            className="text-[#FFFFFF] text-2xl font-medium hover:text-[#a83c70]"
+          >
+            About
+          </button>
           <button
             onClick={() => navigate("/events/published")}
             className="text-[#FFFFFF] text-2xl font-medium hover:text-[#a83c70]"
           >
             Events
           </button>
-
           <button
             onClick={() => navigate("/")}
-            className="text-[#FFFFFF] text-4xl font-medium hover:text-[#a83c70]"
+            className="text-[#FFFFFF] text-4xl font-bold"
           >
             Playmakers Hub
           </button>
-
           <button
             onClick={togglePopup}
             className="text-[#FFFFFF] text-2xl font-medium hover:text-[#a83c70]"
           >
             Booking
           </button>
-
           <button
             disabled={!isJoinEnabled}
-            className={`text-[#FFFFFF] text-2xl font-medium ${
-              isJoinEnabled
+            className={`text-[#FFFFFF] text-2xl font-medium ${isJoinEnabled
                 ? "hover:text-[#a83c70]"
                 : "cursor-not-allowed text-gray-500"
-            }`}
+              }`}
             onClick={() => {
               if (isJoinEnabled) {
-                toast.info("Join functionality is coming soon!");
+                navigate("/join");
               }
             }}
           >
@@ -385,7 +391,8 @@ const Homepage = () => {
           </button>
         </nav>
 
-        <div className="flex items-center space-x-4">
+        {/* Login button aligned to the right */}
+        <div className="flex-1 flex justify-end">
           <button
             onClick={() => navigate("/member/login")}
             className="font-poppins px-6 py-2 bg-[#992d5e] text-[#ffffff] text-md font-bold hover:bg-[#a83c70] rounded-full"
@@ -410,7 +417,10 @@ const Homepage = () => {
                   <br />
                   Within You
                 </h1>
-                <p className="sub-text text-[#7e7e7e] font-poppins mt-4 text-lg">
+                <p
+                  className="sub-text text-[#7e7e7e] font-poppins mt-4 text-lg cursor-pointer"
+                  onClick={() => navigate("/about-us")}
+                >
                   About us ➡
                 </p>
               </div>
