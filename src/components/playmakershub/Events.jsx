@@ -10,20 +10,20 @@ const Events = () => {
     <div className="bg-Radial bg-[#000000] min-h-screen">
       <AuthenticatedHeader />
       <main className="text-[#ffffff]">
-        <div className="flex bg-green-500 p-5 gap-3">
+        <div className="flex bg-radial p-5 gap-3 text-xl pl-10 relative">
           {/* Tab Buttons */}
           <button
             onClick={() => setActiveTab("past")}
             className={`${
-              activeTab === "past" ? "text-red-500 font-bold" : "text-white"
+              activeTab === "past" ? "text-green-500 font-bold text-xl" : "text-white"
             }`}
           >
-            Past Events
+            Approved Events
           </button>
           <button
             onClick={() => setActiveTab("upcoming")}
             className={`${
-              activeTab === "upcoming" ? "text-red-500 font-bold" : "text-white"
+              activeTab === "upcoming" ? "text-red-500 font-bold text-xl" : "text-white"
             }`}
           >
             Upcoming Events

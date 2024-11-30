@@ -109,7 +109,7 @@ const AuthenticatedHeader = () => {
   const handleLogout = async () => {
     await supabase.auth.signOut();
     localStorage.removeItem("authToken");
-    navigate("/member/login");
+    navigate("/");
   };
 
   const togglePopover = () => {
@@ -208,14 +208,14 @@ const AuthenticatedHeader = () => {
   };
 
   return (
-    <header className="flex items-center justify-between p-4 shadow-md py-1">
+    <header className="flex items-center justify-between p-4 shadow-md py-1 relative">
       <img
         src={playmakersLogo}
         alt="Playmakers Logo"
-        className="w-16 h-14 object-contain"
+        className="w-18 h-16 object-contain pl-5 relative"
       />
 
-      <nav className="flex justify-center space-x-20 w-full">
+      <nav className="flex justify-center space-x-20 w-full pl-20 relative">
         <button
           onClick={() => navigate("/events")}
           className="text-[#FFFFFF] text-2xl font-medium hover:text-[#a83c70]"
@@ -224,12 +224,12 @@ const AuthenticatedHeader = () => {
         </button>
         <button
           onClick={() => navigate("/playmakershub")}
-          className="text-[#FFFFFF] text-4xl font-medium hover:text-[#a83c70]"
+          className="text-[#FFFFFF] text-4xl font-medium"
         >
           Playmakers Hub
         </button>
         <button
-          onClick={() => navigate("")}
+          onClick={() => navigate("/playmakershub")}
           className="text-[#FFFFFF] text-2xl font-medium hover:text-[#a83c70]"
         >
           Home

@@ -13,15 +13,15 @@ const AboutUs = () => {
    return (
       <div className="font-lexend bg-Radial bg-[#000000] text-white h-screen">
          {/* Header */}
-         <header className="flex items-center justify-between p-4 shadow-md py-1 space-x-10 pt-3 pb-4">
+         <header className="flex items-center justify-between p-4 shadow-md space-x-10 pt-2 py-1 pb-2">
             <div className="flex items-center pl-3 w-3/5">
-               <img src="playmakerslogo.png" alt="Logo" className="w-20 h-20" />
-               <p className="text-3xl font-bold ml-4">Playmakers Hub</p>
+               <img src="playmakerslogo.png" alt="Logo" className="w-16 h-16" />
+               <p className="text-2xl font-bold ml-4">Playmakers Hub</p>
             </div>
             <nav className="flex justify-center space-x-20">
                <a
                   onClick={() => navigate("/")}
-                  className="text-[#FFFFFF] text-2xl font-semibold hover:text-[#a83c70] cursor-pointer"
+                  className="text-[#FFFFFF] text-2xl font-medium hover:text-[#a83c70] cursor-pointer"
                >
                   Home
                </a>
@@ -31,7 +31,7 @@ const AboutUs = () => {
          {/* Main Content */}
          <div className="bg-lexend px-8 py-10 bg-Radial bg-[#000000]">
             <div className="py-10">
-               <h2 className="text-center text-5xl font-bold -mt-10 mb-8 font-lexend">
+               <h2 className="text-center text-4xl font-bold -mt-10 mb-8 font-lexend">
                   Types of Organizations
                </h2>
                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-xl">
@@ -42,7 +42,7 @@ const AboutUs = () => {
                         className="w-40 h-40"
                      />
                      <p className="text-justify">
-                        <span className="font-extrabold">
+                        <span className="font-bold">
                            University Student Government
                         </span>{" "}
                         is the highest student governing body of the University of
@@ -60,7 +60,7 @@ const AboutUs = () => {
                         className="w-40 h-40"
                      />
                      <p className="text-justify">
-                        <span className="font-extrabold">
+                        <span className="font-bold">
                            Curricular Student Organizations
                         </span>{" "}
                         are aligned with academic disciplines and provide support and
@@ -79,7 +79,7 @@ const AboutUs = () => {
                         className="w-40 h-40"
                      />
                      <p className="text-justify">
-                        <span className="font-extrabold">
+                        <span className="font-bold">
                            Non-Curricular Student Organizations
                         </span>{" "}
                         focus on extracurricular interests such as arts, culture,

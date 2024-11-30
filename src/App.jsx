@@ -13,6 +13,7 @@ import MembersLogin from "./authentication/playmakershub/MembersLogin";
 import Homepage from "./screens/playmakershub/routes/Homepage";
 import PlaymakersHome from "./screens/playmakershub/protectedRoutes/PlaymakersHome";
 import UpcomingEvents from "./components/playmakershub/UpcomingEvents";
+import Unauthenticated from "./components/playmakershub/Unauthenticated";
 
 import ProtectedRoutes from "./utils/ProtectedRoutes";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
@@ -39,6 +40,7 @@ const App = () => {
           <Route element={<UpcomingEvents />} path="/events/upcoming" />
           <Route element={<Events />} path="/events" />
         </Route>
+        <Route element={<Unauthenticated />} path="/homepage/events/published" />
         <Route element={<DoneEvents />} path="/events/published" />
         {/* playmakers admin */}
         <Route element={<AdminLogin />} path="/adminonly" />

@@ -86,60 +86,17 @@ const DoneEvents = () => {
 
   const closeModal = () => setSelectedEvent(null);
 
-  if (loading) return <div>Loading...</div>;
+  const Spinner = () => (
+    <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
+      <div className="animate-spin rounded-full h-12 w-12 border-t-4 border-b-4 border-white"></div>
+    </div>
+  );
+
+  if (loading) return <Spinner />;
 
   return (
-    <div className="bg-Radial h-screen bg-[#000000]">
+    <div className="p-6 -mt-12">
       <ToastContainer />
-      <header className="flex items-center justify-between p-4 shadow-md py-1">
-        <nav className="flex justify-center space-x-20 w-full">
-          <button
-            onClick={() => navigate("/events/published")}
-            className="text-[#FFFFFF] text-2xl font-medium hover:text-[#a83c70]"
-          >
-            Events
-          </button>
-
-          <button
-            onClick={() => navigate("/")}
-            className="text-[#FFFFFF] text-4xl font-medium hover:text-[#a83c70]"
-          >
-            Playmakers Hub
-          </button>
-
-          <button
-            onClick={togglePopup}
-            className="text-[#FFFFFF] text-2xl font-medium hover:text-[#a83c70]"
-          >
-            Booking
-          </button>
-
-          <button
-            disabled={!isJoinEnabled}
-            className={`text-[#FFFFFF] text-2xl font-medium ${
-              isJoinEnabled
-                ? "hover:text-[#a83c70]"
-                : "cursor-not-allowed text-gray-500"
-            }`}
-            onClick={() => {
-              if (isJoinEnabled) {
-                toast.info("Join functionality is coming soon!");
-              }
-            }}
-          >
-            Join us
-          </button>
-        </nav>
-
-        <div className="flex items-center space-x-4">
-          <button
-            onClick={() => navigate("/member/login")}
-            className="font-poppins px-6 py-2 bg-[#992d5e] text-[#ffffff] text-md font-bold hover:bg-[#a83c70] rounded-full"
-          >
-            Login
-          </button>
-        </div>
-      </header>
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 p-10">
         {events.length > 0 ? (
           events.map((event) => (

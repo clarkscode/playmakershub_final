@@ -19,10 +19,16 @@ const PastsEvents = () => {
     getPastEvents();
   }, []);
 
-  if (loading) return <div>Loading...</div>;
+  const Spinner = () => (
+    <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
+      <div className="animate-spin rounded-full h-12 w-12 border-t-4 border-b-4 border-white"></div>
+    </div>
+  );
+
+  if (loading) return <Spinner />;
 
   return (
-    <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 p-6">
+    <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 p-6 -mt-10">
       {pastEvents.length > 0 ? (
         pastEvents.map((event) => (
           <div

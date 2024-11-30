@@ -6,13 +6,13 @@ import {
   createBookingProcess,
   fetchBookingStatus,
   supabase,
-} from "../../../database/supabase";
-import BookingForm from "../../../components/playmakershub/BookingForm";
+} from "../../database/supabase";
+import BookingForm from "../../components/playmakershub/BookingForm";
 // React Icons
 import { FaInfoCircle } from "react-icons/fa";
-import sendEmail from "../../../database/sendEmail";
+import sendEmail from "../../database/sendEmail";
 
-const Homepage = () => {
+const UnauthNavbar = () => {
   const [popupVisible, setPopupVisible] = useState(false);
   const [captchaVerified, setCaptchaVerified] = useState(false);
   const [bookingID, setBookingID] = useState(null);
@@ -342,10 +342,29 @@ const Homepage = () => {
     }
   }, [fetchedData]);
 
+  const openModal = (event) => {
+    setSelectedEvent(event);
+  };
+
+  const closeModal = () => {
+    setSelectedEvent(null);
+  };
+
+  const [activeTab, setActiveTab] = useState("");
+  
+  // const Spinner = () => (
+  //   <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
+  //     <div className="animate-spin rounded-full h-12 w-12 border-t-4 border-b-4 border-white"></div>
+  //   </div>
+  // );
+
+  // if (loading) return <Spinner />;
+
   return (
-    <div className="bg-Radial h-screen bg-[#000000]">
-      <ToastContainer />
-      <header className="flex items-center justify-between p-4 shadow-md py-1">
+    <div className="">
+      <div>
+        <ToastContainer />
+        <header className="flex items-center justify-between p-4 shadow-md py-1">
         {/* Empty div to take up space on the left */}
         <div className="flex-1"></div>
 
@@ -377,18 +396,20 @@ const Homepage = () => {
           </button>
           <button
             disabled={!isJoinEnabled}
-            className={`text-[#FFFFFF] text-2xl font-medium ${isJoinEnabled
+            className={`text-[#FFFFFF] text-2xl font-medium ${
+              isJoinEnabled
                 ? "hover:text-[#a83c70]"
                 : "cursor-not-allowed text-gray-500"
-              }`}
+            }`}
             onClick={() => {
               if (isJoinEnabled) {
-                navigate("/join");
+                toast.info("Join functionality is coming soon!");
               }
             }}
           >
             Join us
           </button>
+
         </nav>
 
         {/* Login button aligned to the right */}
@@ -401,35 +422,80 @@ const Homepage = () => {
           </button>
         </div>
       </header>
+        </div>
 
-      <main className="flex justify-center items-center">
-        <div className="Content flex flex-col md:flex-row md:justify-between px-4 md:px-10">
-          <div className="main-content -space-x-10">
-            <img
-              src="playmakerslogo.png"
-              alt="Playmakers Logo"
-              className="logo object-cover"
-            />
-            <div className="main-text-container">
-              <div className="pr-20">
-                <h1 className="main-text bottom-5 font-lexend font-semibold text-[#fcfafa]">
-                  Exploring Music
-                  <br />
-                  Within You
-                </h1>
-                <p
-                  className="sub-text text-[#7e7e7e] font-poppins mt-4 text-lg cursor-pointer"
-                  onClick={() => navigate("/about-us")}
-                >
-                  About us ➡
-                </p>
-              </div>
+      {/* Tab Buttons
+      <button
+            onClick={() => setActiveTab("past")}
+            className={`${
+              activeTab === "past" ? "text-red-500 font-bold text-xl" : "text-white"
+            }`}
+          >
+            Approved Events
+          </button> */}
+
+          {/* Event Grid
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 ">
+        {pastEvents.length > 0 ? (
+          pastEvents.map((event) => (
+            <div
+              key={event.event_id}
+              className="bg-gray-800 p-4 rounded shadow-md"
+            >
+              <h3 className="text-xl font-bold text-white">
+                {event.event_title}
+              </h3>
+              <p className="text-gray-400">
+                {new Date(event.start_date).toLocaleDateString()} -{" "}
+                {new Date(event.end_date).toLocaleDateString()} |{" "}
+                {event.bookings?.event_location || "Location not available"}
+              </p>
+              <p className="text-gray-300">
+                Organizer: {event.bookings?.organizer_first_name}{" "}
+                {event.bookings?.organizer_last_name}
+              </p>
+              <p
+                className="text-blue-500 cursor-pointer"
+                onClick={() => openModal(event)}
+              >
+                View Details
+              </p>
             </div>
+          ))
+        ) : (
+          <p className="text-white">No past events available</p>
+        )}
+      </div> */}
+    <main>
+      {/* Pop-up Modal */}
+      {/* {selectedEvent && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+          <div className="bg-gray-900 p-6 rounded-lg shadow-xl max-w-lg w-full text-white">
+            <h2 className="text-2xl font-bold">{selectedEvent.event_title}</h2>
+            <p className="text-gray-400">
+              {new Date(selectedEvent.start_date).toLocaleDateString()} -{" "}
+              {new Date(selectedEvent.end_date).toLocaleDateString()} |{" "}
+              {selectedEvent.bookings?.event_location || "Location not available"}
+            </p>
+            <p className="mt-2">
+              {selectedEvent.description ||
+                "No description available for this event."}
+            </p>
+            <p className="mt-4">
+              Organizer: {selectedEvent.bookings?.organizer_first_name}{" "}
+              {selectedEvent.bookings?.organizer_last_name}
+            </p>
+            <button
+              className="mt-6 bg-red-500 px-4 py-2 rounded text-white"
+              onClick={closeModal}
+            >
+                Close
+            </button>
           </div>
         </div>
-      </main>
+      )} */}
 
-      {popupVisible && (
+        {popupVisible && (
         <div className="fixed inset-0 bg-grey bg-opacity-50 flex justify-center items-center z-50 backdrop-blur-lg">
           <BookingForm
             formData={formData}
@@ -485,8 +551,9 @@ const Homepage = () => {
           </div>
         </div>
       )}
+      </main>
     </div>
   );
 };
 
-export default Homepage;
+export default UnauthNavbar;

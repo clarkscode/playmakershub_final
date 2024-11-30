@@ -101,10 +101,16 @@ const UpcomingEvents = () => {
     }
   };
 
-  if (loading) return <div>Loading...</div>;
+  const Spinner = () => (
+    <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
+      <div className="animate-spin rounded-full h-12 w-12 border-t-4 border-b-4 border-white"></div>
+    </div>
+  );
+
+  if (loading) return <Spinner />;
 
   return (
-    <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 p-6">
+    <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 p-6 -mt-10">
       <h2 className="text-2xl font-bold mb-6 text-center col-span-full">
         Upcoming Events
       </h2>
@@ -220,7 +226,7 @@ const UpcomingEvents = () => {
           </div>
         ))
       ) : (
-        <p className="text-gray-700 col-span-full text-center">
+        <p className="text-gray-600 col-span-full text-center">
           No upcoming events available
         </p>
       )}
