@@ -2,32 +2,51 @@ import { useState } from "react";
 import ReCAPTCHA from "react-google-recaptcha";
 import { toast } from "react-toastify";
 
-const CreateEventModal = ({ isOpen, onClose, onSubmit }) => {
+const CreateEventModal = ({ isOpen, onClose, adminName }) => {
   const [formData, setFormData] = useState({
-    firstName: "",
-    lastName: "",
-    email: "",
-    title: "",
+    firstName: "Jie clark",
+    lastName: "Terec",
+    email: "jieclarkm@ustp.edu.ph",
+    title: "Admin Event",
     eventType: "Department",
     eventTypeName: "",
     startDate: "",
     endDate: "",
     startTime: "",
     endTime: "",
-    location: "",
+    location: "USTP Gymnasium",
     genreThemeHolder: "Genre", // Dropdown to toggle between "Genre" and "Theme"
     genre: "",
     theme: "",
-    description: "",
+    description: "Admin event description",
+    // musician requirements
+    guitarist: 0,
+    vocalist: 0,
+    bassist: 0,
+    keyboardist: 0,
+    percussionist: 0,
   });
 
   const [captchaVerified, setCaptchaVerified] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
+
+    // Convert numeric inputs to numbers
+    const newValue = [
+      "guitarist",
+      "vocalist",
+      "bassist",
+      "keyboardist",
+      "percussionist",
+    ].includes(name)
+      ? parseInt(value, 10) || 0 // Default to 0 if empty or invalid
+      : value;
+
     setFormData((prev) => ({
       ...prev,
-      [name]: value,
+      [name]: newValue,
     }));
   };
 
@@ -65,6 +84,11 @@ const CreateEventModal = ({ isOpen, onClose, onSubmit }) => {
       return false;
     }
 
+    if (!email.endsWith("@ustp.edu.ph")) {
+      toast.error("Only @ustp.edu.ph email addresses are allowed.");
+      return false;
+    }
+
     if (!captchaVerified) {
       toast.error("Please verify the CAPTCHA.");
       return false;
@@ -73,43 +97,28 @@ const CreateEventModal = ({ isOpen, onClose, onSubmit }) => {
     return true;
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (!validateForm()) return;
 
-    const eventData = {
-      ...formData,
-      genreOrTheme:
-        formData.genreThemeHolder === "Genre" ? formData.genre : formData.theme,
-    };
-
-    onSubmit(eventData); // Pass event data to the parent component
-    setFormData({
-      firstName: "",
-      lastName: "",
-      email: "",
-      title: "",
-      eventType: "Department",
-      eventTypeName: "",
-      startDate: "",
-      endDate: "",
-      startTime: "",
-      endTime: "",
-      location: "",
-      genreThemeHolder: "Genre",
-      genre: "",
-      theme: "",
-      description: "",
-    });
-    setCaptchaVerified(false);
-    onClose();
+    setLoading(true);
+    try {
+      // await adminCreateEventProcess(formData, adminName);
+      console.log(formData);
+      toast.success("Event created successfully!");
+      onClose(); // Close modal after successful submission
+    } catch (error) {
+      toast.error("An error occurred while creating the event.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white p-8 rounded-lg shadow-lg w-3/4 max-h-screen overflow-y-scroll">
+      <div className="bg-white p-8 rounded-lg shadow-lg sm:w-11/12 md:w-3/4 lg:w-1/2 max-h-screen overflow-y-scroll">
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-xl font-bold">Create Event</h2>
           <button onClick={onClose} className="text-gray-500 text-2xl">
@@ -119,7 +128,7 @@ const CreateEventModal = ({ isOpen, onClose, onSubmit }) => {
 
         <form onSubmit={handleSubmit}>
           {/* Organizer's First Name and Last Name */}
-          <div className="flex space-x-4 mb-4">
+          <div className="flex flex-col md:flex-row md:space-x-4 mb-4">
             <div className="w-1/2">
               <label className="block text-sm font-medium text-gray-700">
                 First Name
@@ -331,6 +340,31 @@ const CreateEventModal = ({ isOpen, onClose, onSubmit }) => {
             </div>
           </div>
 
+          {/* Musician Requirements */}
+          <div className="grid grid-cols-2 gap-4 mb-4">
+            {[
+              "guitarist",
+              "vocalist",
+              "bassist",
+              "keyboardist",
+              "percussionist",
+            ].map((field, idx) => (
+              <div key={idx}>
+                <label className="block text-sm font-medium text-gray-700">
+                  No. of {field.charAt(0).toUpperCase() + field.slice(1)}s
+                </label>
+                <input
+                  type="number"
+                  name={field}
+                  value={formData[field]}
+                  onChange={handleChange}
+                  min="0"
+                  className="w-full border border-gray-300 rounded-lg p-2 mt-1"
+                />
+              </div>
+            ))}
+          </div>
+
           {/* Description */}
           <div className="mb-6">
             <label className="block text-sm font-medium text-gray-700">
@@ -357,10 +391,14 @@ const CreateEventModal = ({ isOpen, onClose, onSubmit }) => {
           <div>
             <button
               type="submit"
-              className="w-full bg-blue-500 text-white py-2 rounded-lg"
-              disabled={!captchaVerified}
+              className={`w-full py-2 rounded-lg ${
+                captchaVerified
+                  ? "bg-blue-500 text-white"
+                  : "bg-gray-300 text-gray-600"
+              }`}
+              disabled={!captchaVerified || loading}
             >
-              Create Event
+              {loading ? "Creating Event..." : "Create Event"}
             </button>
           </div>
         </form>

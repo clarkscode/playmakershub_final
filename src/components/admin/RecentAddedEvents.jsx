@@ -39,7 +39,9 @@ export const RecentAddedEvents = () => {
       <thead className="bg-[#EFFBEF]">
         <tr>
           <th className="py-2 text-[#5C1B33] text-sm">Event Title</th>
-          <th className="py-2 text-[#5C1B33] text-sm">Theme</th>
+          <th className="py-2 text-[#5C1B33] text-sm">
+            {event.theme ? "Theme" : "Genre"}
+          </th>
           <th className="py-2 text-[#5C1B33] text-sm">Start Date</th>
           <th className="py-2 text-[#5C1B33] text-sm">Start Time</th>
           <th className="py-2 text-[#5C1B33] text-sm">End Time</th>
@@ -50,7 +52,9 @@ export const RecentAddedEvents = () => {
         {events.map((event, index) => (
           <tr key={index} className="text-center">
             <td className="py-2 text-[#4B4B4C]">{event.event_title}</td>
-            <td className="py-2 text-[#4B4B4C]">{event.theme}</td>
+            <td className="py-2 text-[#4B4B4C]">
+              {event.theme || event.genre}
+            </td>
             <td className="py-2 text-[#4B4B4C]">{event.start_date}</td>
             <td className="py-2 text-[#4B4B4C]">{event.start_time}</td>
             <td className="py-2 text-[#4B4B4C]">{event.end_time}</td>

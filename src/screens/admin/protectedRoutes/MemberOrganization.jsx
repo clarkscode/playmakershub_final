@@ -14,6 +14,8 @@ import {
 } from "../../../database/supabase";
 import { toast } from "react-toastify";
 import sendEmail from "../../../database/sendEmail";
+import { Chip } from "@mui/material";
+import { NewReleases as NewBadgeIcon } from "@mui/icons-material";
 
 const MemberOrganization = () => {
   const [members, setMembers] = useState([]);
@@ -41,17 +43,35 @@ const MemberOrganization = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 8;
 
+  // Sort the members by join_date or other criteria
+  const sortMembersByDate = (membersList) => {
+    return [...membersList].sort(
+      (a, b) => new Date(b.join_date) - new Date(a.join_date)
+    ); // Newest members first
+  };
+
   const loadMembers = async () => {
     try {
       setLoading(true); // Start loading
+      /*
       const data = await fetchMembers();
       const list = data?.map((v) => ({
         ...v,
         genre: JSON.parse(v.genre || []),
         role: JSON.parse(v.role || []),
       }));
-      if (list) {
+       if (list) {
         setMembers(list);
+      } */
+      const data = await fetchMembers();
+      const parsedMembers = data?.map((v) => ({
+        ...v,
+        genre: JSON.parse(v.genre || []),
+        role: JSON.parse(v.role || []),
+      }));
+      if (parsedMembers) {
+        const sortedMembers = sortMembersByDate(parsedMembers);
+        setMembers(sortedMembers); // Save sorted members
       }
     } catch (error) {
       console.error("Error loading members:", error.message);
@@ -76,6 +96,14 @@ const MemberOrganization = () => {
     currentPage * itemsPerPage
   );
 
+  // Check if a member is "New"
+  const isNewMember = (joinDate) => {
+    const now = new Date();
+    const joinedAt = new Date(joinDate);
+    const diffInHours = (now - joinedAt) / (1000 * 60 * 60);
+    return diffInHours <= 24; // Returns true if within 24 hours
+  };
+
   const handleCreateAccount = () => {
     setIsModalOpen(true);
   };
@@ -96,7 +124,8 @@ const MemberOrganization = () => {
 
       if (authError) {
         console.error("Authentication error:", authError.message);
-        toast.error("Failed to create user in authentication.");
+        // toast.error("Failed to create user in authentication.");
+        // toast.error("Failed to create member");
         return;
       }
 
@@ -108,7 +137,7 @@ const MemberOrganization = () => {
         events: 0,
         authid: authData.user.id,
       };
-      console.log(password);
+      // console.log(password);
       const { error: memberError } = await supabase
         .from("members_orgs")
         .insert(memberData);
@@ -122,7 +151,11 @@ const MemberOrganization = () => {
         return;
       }
 
-      toast.success("Member created successfully!");
+      // Add new member to the list and sort it
+      setMembers((prevMembers) =>
+        sortMembersByDate([{ ...memberData }, ...prevMembers])
+      );
+
       loadMembers();
       setIsModalOpen(false);
       setNewMember({
@@ -276,9 +309,24 @@ const MemberOrganization = () => {
               return (
                 <div
                   key={idx}
-                  className="cursor-pointer"
+                  className="relative cursor-pointer"
                   onClick={() => handleViewDetails(member)}
                 >
+                  {/* Dynamic "New" Badge */}
+                  {isNewMember(member.join_date) && (
+                    <Chip
+                      icon={<NewBadgeIcon />}
+                      label="New"
+                      size="small"
+                      color="white"
+                      className="absolute top-2 left-2 z-10"
+                      sx={{
+                        backgroundColor: "#5C1B33",
+                        color: "#FFFFFF",
+                        zIndex: 10,
+                      }}
+                    />
+                  )}
                   <MemberCard {...member} />
                 </div>
               );

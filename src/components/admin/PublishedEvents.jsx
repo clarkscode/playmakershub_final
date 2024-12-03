@@ -12,7 +12,7 @@ const PublishedEvents = () => {
       try {
         const data = await retrievePublishedEvents();
         setOngoingEvents(data);
-        console.log(data);
+        // console.log(data);
       } catch (err) {
         setError("Failed to retrieve ongoing events.");
         console.error(err);
@@ -36,7 +36,9 @@ const PublishedEvents = () => {
     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
       {ongoingEvents.length > 0 ? (
         ongoingEvents.map((event, index) => {
-          console.log(event);
+          {
+            /* console.log(event); */
+          }
           return (
             <EventCard
               key={index}

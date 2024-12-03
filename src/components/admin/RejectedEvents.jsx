@@ -9,9 +9,10 @@ const RejectedEvents = () => {
   useEffect(() => {
     const fetchRejectedEvents = async () => {
       try {
-        const data = await retrieveRejectedEvents(); // Fetch rejected events from Supabase
+        const data = await retrieveRejectedEvents();
+        // Fetch rejected events from Supabase
         setRejectedEvents(data);
-        console.log(data);
+        // console.log(data);
       } catch (error) {
         console.error("Error fetching rejected events:", error);
       } finally {
@@ -37,7 +38,8 @@ const RejectedEvents = () => {
             organizer={`${event.bookings.organizer_first_name} ${event.bookings.organizer_last_name}`} // Organizer Name
             email={event.bookings.organizer_email} // Organizer Email
             location={event.bookings.event_location} // Event Location
-            genre={event.genre} // Event Genre
+            genre={event.genre}
+            // Event Genre
             eventStart={{
               date: event.start_date,
               time: event.start_time,

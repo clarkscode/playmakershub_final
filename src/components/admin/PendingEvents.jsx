@@ -12,7 +12,7 @@ const PendingEvents = () => {
         const events = await retrievePendingEvents();
         setPendingEvents(events);
         setLoading(false);
-        console.log(events);
+        // console.log(events);
       } catch (error) {
         console.error("Error fetching pending events:", error);
         setLoading(false);

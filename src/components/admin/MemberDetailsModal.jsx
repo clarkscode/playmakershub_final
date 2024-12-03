@@ -94,7 +94,12 @@ const MemberDetailsModal = ({ member, onClose, onUpdate, onDelete }) => {
           {!isEditing && (
             <p className="text-sm flex items-center">
               <span className="mr-2">🕒</span>
-              {member.join_date}
+              {new Date(member.join_date).toLocaleString("en-US", {
+                weekday: "long",
+                month: "long",
+                day: "numeric",
+                year: "numeric",
+              })}
             </p>
           )}
 
