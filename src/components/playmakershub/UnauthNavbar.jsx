@@ -9,7 +9,7 @@ import {
 } from "../../database/supabase";
 import BookingForm from "../../components/playmakershub/BookingForm";
 // React Icons
-import { FaInfoCircle } from "react-icons/fa";
+import { FaBars, FaRegWindowClose } from 'react-icons/fa';
 import sendEmail from "../../database/sendEmail";
 
 const UnauthNavbar = () => {
@@ -342,68 +342,126 @@ const UnauthNavbar = () => {
     }
   }, [fetchedData]);
 
+  const [nav, setNav] = useState(false);
+
+const handleNav = () => {
+  setNav(!nav);
+};
+
   return (
     <div className="">
-      <div>
-        <ToastContainer />
-        <header className="flex items-center justify-between p-4 shadow-md py-1">
-          {/* Empty div to take up space on the left */}
-          <div className="flex-1"></div>
+  <div>
+    <ToastContainer />
+    <header className="flex items-center justify-between p-4 shadow-md py-1">
+  {/* Mobile Navbar Toggle and Login Button */}
+  <div className="flex flex-1 items-center justify-end p-4 md:hidden w-full">
+    <button
+      onClick={() => navigate("/member/login")}
+      className="font-poppins px-6 py-1 bg-[#992d5e] text-[#ffffff] text-md font-bold hover:bg-[#a83c70] rounded-full mr-4"
+    >
+      Login
+    </button>
+    <div onClick={handleNav}>
+      {nav ? <FaRegWindowClose size={30} color="white" /> : <FaBars size={30} color="white" />}
+    </div>
+  </div>
 
-          {/* Centered Navigation */}
-          <nav className="flex space-x-20">
-            <button
-              onClick={() => navigate("/about-us")}
-              className="text-[#FFFFFF] text-2xl font-medium hover:text-[#a83c70]"
-            >
-              About
-            </button>
-            <button
-              onClick={() => navigate("/homepage/events/published")}
-              className="text-[#FFFFFF] text-2xl font-medium hover:text-[#a83c70]"
-            >
-              Events
-            </button>
-            <button
-              onClick={() => navigate("/")}
-              className="text-[#FFFFFF] text-4xl font-bold"
-            >
-              Playmakers Hub
-            </button>
-            <button
-              onClick={togglePopup}
-              className="text-[#FFFFFF] text-2xl font-medium hover:text-[#a83c70]"
-            >
-              Booking
-            </button>
-            <button
-              disabled={!isJoinEnabled}
-              className={`text-[#FFFFFF] text-2xl font-medium ${
-                isJoinEnabled
-                  ? "hover:text-[#a83c70]"
-                  : "cursor-not-allowed text-gray-500"
-              }`}
-              onClick={() => {
-                if (isJoinEnabled) {
-                  toast.info("Join functionality is coming soon!");
-                }
-              }}
-            >
-              Join us
-            </button>
-          </nav>
+  {/* Centered Navigation for Desktop */}
+  <nav className="hidden md:flex space-x-20 flex-1 justify-center">
+    <button
+      onClick={() => navigate("/about-us")}
+      className="text-[#FFFFFF] text-2xl font-medium hover:text-[#a83c70]"
+    >
+      About
+    </button>
+    <button
+      onClick={() => navigate("/homepage/events/published")}
+      className="text-[#FFFFFF] text-2xl font-medium hover:text-[#a83c70]"
+    >
+      Events
+    </button>
+    <button
+      onClick={() => navigate("/")}
+      className="text-[#FFFFFF] text-4xl font-bold"
+    >
+      Playmakers Hub
+    </button>
+    <button
+      onClick={togglePopup}
+      className="text-[#FFFFFF] text-2xl font-medium hover:text-[#a83c70]"
+    >
+      Booking
+    </button>
+    <button
+      disabled={!isJoinEnabled}
+      className={`text-[#FFFFFF] text-2xl font-medium ${
+        isJoinEnabled ? "hover:text-[#a83c70]" : "cursor-not-allowed text-gray-500"
+      }`}
+      onClick={() => {
+        if (isJoinEnabled) {
+          toast.info("Join functionality is coming soon!");
+        }
+      }}
+    >
+      Join us
+    </button>
+  </nav>
 
-          {/* Login button aligned to the right */}
-          <div className="flex-1 flex justify-end">
-            <button
-              onClick={() => navigate("/member/login")}
-              className="font-poppins px-6 py-2 bg-[#992d5e] text-[#ffffff] text-md font-bold hover:bg-[#a83c70] rounded-full"
-            >
-              Login
-            </button>
-          </div>
-        </header>
-      </div>
+  {/* Login Button for Desktop */}
+  <div className="hidden md:flex">
+    <button
+      onClick={() => navigate("/member/login")}
+      className="font-poppins px-6 py-2 bg-[#992d5e] text-[#ffffff] text-md font-bold hover:bg-[#a83c70] rounded-full"
+    >
+      Login
+    </button>
+  </div>
+</header>
+  </div>
+
+  {/* Mobile Navigation */}
+  <div
+    className={`${
+      nav
+        ? "fixed left-0 top-0 w-[60%] h-full bg-Radial bg-black z-10 flex flex-col p-4 ease-in-out duration-50"
+        : "fixed left-[-150%]"
+    } md:hidden`}
+  >
+    <button className="text-white text-3xl font-bold mb-4" onClick={() => navigate("/")}>
+      Playmakers Hub
+    </button>
+    <button
+      onClick={() => navigate("/about-us")}
+      className="text-white text-2xl font-medium hover:text-[#a83c70] mb-2"
+    >
+      About
+    </button>
+    <button
+      onClick={() => navigate("/homepage/events/published")}
+      className="text-white text-2xl font-medium hover:text-[#a83c70] mb-2"
+    >
+      Events
+    </button>
+    <button
+      onClick={togglePopup}
+      className="text-white text-2xl font-medium hover:text-[#a83c70] mb-2"
+    >
+      Booking
+    </button>
+    <button
+      disabled={!isJoinEnabled}
+      className={`text-[#FFFFFF] text-2xl font-medium ${
+        isJoinEnabled ? "hover:text-[#a83c70]" : "cursor-not-allowed text-gray-500"
+      }`}
+      onClick={() => {
+        if (isJoinEnabled) {
+          toast.info("Join functionality is coming soon!");
+        }
+      }}
+    >
+      Join us
+    </button>
+  </div>
 
       <main>
         {popupVisible && (

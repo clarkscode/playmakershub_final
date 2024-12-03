@@ -9,7 +9,7 @@ import {
 } from "../../../database/supabase";
 import BookingForm from "../../../components/playmakershub/BookingForm";
 // React Icons
-import { FaInfoCircle } from "react-icons/fa";
+import { FaInfoCircle, FaBars, FaRegWindowClose } from "react-icons/fa";
 import sendEmail from "../../../database/sendEmail";
 
 const Homepage = () => {
@@ -342,6 +342,12 @@ const Homepage = () => {
     }
   }, [fetchedData]);
 
+      //function for responsive navigation bar when to click sa bar icon   
+      const [nav, setNav] = useState(false);
+      const handleNav = () => {
+        setNav(!nav);
+      };
+
   return (
     <div className="bg-Radial h-screen bg-[#000000]">
       <ToastContainer />
@@ -350,7 +356,7 @@ const Homepage = () => {
         <div className="flex-1"></div>
 
         {/* Centered Navigation */}
-        <nav className="flex space-x-20">
+        <nav className="hidden md:flex justify-center space-x-20 w-full">
           <button
             onClick={() => navigate("/about-us")}
             className="text-[#FFFFFF] text-2xl font-medium hover:text-[#a83c70]"
@@ -400,6 +406,53 @@ const Homepage = () => {
             Login
           </button>
         </div>
+
+        {/*For responsive Navigation Bar */}
+        <div onClick={handleNav} className="p-4 block md:hidden">
+          {nav ? <FaRegWindowClose size={30} color="white" /> : <FaBars size={30} color="white" />}
+        </div>
+        <div
+          className={`${
+            nav ? "fixed left-0 top-0 w-[60%] h-full bg-Radial bg-black z-10 flex flex-col p-4 ease-in-out duration-50" : "fixed left-[-150%]"
+          } md:hidden`}
+        >
+          <button className="text-white text-3xl font-bold mb-4" onClick={() => navigate("/")}>
+            Playmakers Hub
+          </button>
+          <button
+            onClick={() => navigate("/about-us")}
+            className="text-white text-2xl font-medium hover:text-[#a83c70] mb-2"
+          >
+            About
+          </button>
+          <button
+            onClick={() => navigate("/homepage/events/published")}
+            className="text-white text-2xl font-medium hover:text-[#a83c70] mb-2"
+          >
+            Events
+          </button>
+          <button
+            onClick={togglePopup}
+            className="text-white text-2xl font-medium hover:text-[#a83c70] mb-2"
+          >
+            Booking
+          </button>
+          <button
+            disabled={!isJoinEnabled}
+            className={`text-[#FFFFFF] text-2xl font-medium ${isJoinEnabled
+                ? "hover:text-[#a83c70]"
+                : "cursor-not-allowed text-gray-500"
+              }`}
+            onClick={() => {
+              if (isJoinEnabled) {
+                navigate("/join");
+              }
+            }}
+          >
+            Join us
+          </button>
+        </div>
+          
       </header>
 
       <main className="flex justify-center items-center">
@@ -411,7 +464,7 @@ const Homepage = () => {
               className="logo object-cover"
             />
             <div className="main-text-container">
-              <div className="pr-20">
+            <div className=" flex justify-center flex-col pl-7">
                 <h1 className="main-text bottom-5 font-lexend font-semibold text-[#fcfafa]">
                   Exploring Music
                   <br />
