@@ -298,6 +298,7 @@ const MemberOrganization = () => {
             </p>
           </div>
         ) : (
+          // From here gi change lang nakong UI para sa member card nga mo equal silag height maskig naay kulang nga details wala na fill-upan gar
           <div
             className="px-4 py-10 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 overflow-y-auto"
             style={{ maxHeight: "80vh" }}
@@ -332,6 +333,7 @@ const MemberOrganization = () => {
               );
             })}
           </div>
+          // End of the change sa height balancing.
         )}
         {/* Pagination Controls */}
         <div className="flex justify-between items-center px-4 py-2">

@@ -236,9 +236,9 @@ const AuthenticatedHeader = () => {
         </button>
       </nav>
 
-      <div className="relative ">
+      <div className="relative">
         {/* User Profile Image */}
-        <div className="flex gap-1 items-center w-40 ">
+        <div className="flex gap-1 items-center w-40">
           <img
             src={
               memberDetails?.profile_image || "https://via.placeholder.com/40"
@@ -248,9 +248,14 @@ const AuthenticatedHeader = () => {
             onClick={togglePopover}
           />
           <div className="flex flex-col items-start w-full">
-            <p className="font-bold text-white whitespace-nowrap truncate">
+            {/* User Name */}
+            <p
+              className="font-bold text-white truncate max-w-[7rem] break-words"
+              title={memberDetails?.name || "User"}
+            >
               {memberDetails?.name || "User"}
             </p>
+            {/* User Status */}
             <p className="flex items-center gap-2">
               <span
                 className={`w-3 h-3 rounded-full ${
