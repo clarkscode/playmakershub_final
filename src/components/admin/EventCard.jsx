@@ -143,29 +143,30 @@ const EventCard = ({
     let statusesToNotify = [];
 
     if (filter === "green") {
-      statusesToNotify = ["Green", "Orange", "Red"]; // Notify all members
+      statusesToNotify = ["active", "inactive", "probationary"]; // Notify all members
     } else if (filter === "orange") {
-      statusesToNotify = ["Orange", "Red"]; // Notify Orange and Red members
+      statusesToNotify = ["inactive", "probationary"]; // Notify inactive(orange) and probationary (red) members
     } else if (filter === "red") {
-      statusesToNotify = ["Red"]; // Notify only Red members
+      statusesToNotify = ["probationary"]; // Notify only probationary(red) members
     }
 
     try {
       // Fetch members based on participation status
       const { data: members, error } = await supabase
-        .from("users")
+        .from("members_orgs")
         .select("*")
-        .in("participation_status", statusesToNotify);
+        .in("status", statusesToNotify);
 
       if (error) throw error;
 
       // Notify members via email and Playmakers Hub (web)
+      // ANG WEB NOTIFICATION SA MEMBERS NA PART OPTIONAL
       for (const member of members) {
         // Send email notification
         await sendEmail(
           member.email,
           `You are invited to participate in "${eventTitle}"`,
-          `<p>Hello ${member.first_name},</p>
+          `<p>Hello ${member.name},</p>
          <p>You are invited to participate in the event "<strong>${eventTitle}</strong>"!</p>
          <p>For more details, visit Playmakers Hub.</p>
          <p>Thank you for reaching out to Playmakers - USTP!</p>
@@ -173,12 +174,24 @@ const EventCard = ({
         );
 
         // Send in-app (web) notification
-        await supabase.from("notifications").insert({
+        const notificationPayload = {
           event_id: eventId,
           user_id: member.id,
           notification_type: "web",
           content: `You are invited to participate in the event "${eventTitle}". Visit Playmakers Hub for more details.`,
-        });
+          sent_at: new Date(),
+        };
+        // console.log("Notification payload: ", notificationPayload);
+
+        const { data, error } = await supabase
+          .from("notifications")
+          .insert(notificationPayload);
+
+        if (error) {
+          console.error("Error inserting notification: ", error.message);
+        } else {
+          console.log("Notification inserted: ", data);
+        }
       }
     } catch (error) {
       console.error("Error notifying members: ", error);

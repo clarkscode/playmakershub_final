@@ -196,7 +196,7 @@ const Homepage = () => {
 
           // Musicians Required Details
           guitarist: data.events[0]?.musicians_required[0]?.guitarist,
-          vocalist: data.events[0]?.musicians_required[0]?.vocalists,
+          vocalist: data.events[0]?.musicians_required[0]?.vocalist,
           bassist: data.events[0]?.musicians_required[0]?.bassist,
           keyboardist: data.events[0]?.musicians_required[0]?.keyboardist,
           percussionist: data.events[0]?.musicians_required[0]?.percussionist,
@@ -271,7 +271,7 @@ const Homepage = () => {
         .from("musicians_required")
         .update({
           guitarist: formData.guitarist,
-          vocalists: formData.vocalist,
+          vocalist: formData.vocalist,
           bassist: formData.bassist,
           keyboardist: formData.keyboardist,
           percussionist: formData.percussionist,
@@ -383,10 +383,11 @@ const Homepage = () => {
           </button>
           <button
             disabled={!isJoinEnabled}
-            className={`text-[#FFFFFF] text-2xl font-medium ${isJoinEnabled
+            className={`text-[#FFFFFF] text-2xl font-medium ${
+              isJoinEnabled
                 ? "hover:text-[#a83c70]"
                 : "cursor-not-allowed text-gray-500"
-              }`}
+            }`}
             onClick={() => {
               if (isJoinEnabled) {
                 navigate("/join");

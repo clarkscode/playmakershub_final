@@ -61,6 +61,7 @@ const AuthenticatedHeader = () => {
       } else {
         const participationStatus = await fetchParticipationStatus(authId);
         if (participationStatus) {
+          console.log("member participation status", participationStatus);
           setColor(participationStatus);
         }
         setMemberDetails({ ...data });
@@ -91,7 +92,7 @@ const AuthenticatedHeader = () => {
         `
         )
         .eq("user_id", authId);
-      console.log(data);
+      // console.log(data);
       if (error) {
         console.error("Error fetching events:", error.message);
       } else {
@@ -184,7 +185,7 @@ const AuthenticatedHeader = () => {
         console.error("Error fetching participation data:", error.message);
         return "Inactive";
       }
-
+      console.log("fetchParticipationStatus", participations);
       const participationsPerMonth = participations.filter((p) =>
         dayjs(p.event_start_date).isSame(dayjs(), "month")
       ).length;
@@ -192,13 +193,22 @@ const AuthenticatedHeader = () => {
       const backouts = participations.filter(
         (p) => p.status === "Backout"
       ).length;
-      const nonParticipations = participations.filter(
-        (p) => p.status === "Non-Participation"
-      ).length;
-      console.log(participationsPerMonth);
+      /* 
+      JIECLARKDEV - LATER NA NG NON PARTICIPANTS I THINK BACKOUT OG MONTHLY PARTICIPATION KAY NEEDED
+      https://snipboard.io/R0aLCc.jpg
+      */
+      // const nonParticipations = participations.filter(
+      //   (p) => p.status === "Non-Participation"
+      // ).length;
+
+      console.log("participationsPerMonth", participationsPerMonth);
+      // console.log("nonParticipations", nonParticipations);
+      console.log("backouts", backouts);
       if (participationsPerMonth >= 2) return "Green";
-      if (nonParticipations >= 3 || backouts >= 1) return "Orange";
-      if (nonParticipations >= 5 || backouts >= 2) return "Red";
+      // if (nonParticipations >= 3 || backouts >= 1) return "Orange";
+      // if (nonParticipations >= 5 || backouts >= 2) return "Red";
+      if (backouts >= 1) return "Orange";
+      if (backouts >= 2) return "Red";
 
       return "Inactive";
     } catch (err) {
@@ -253,10 +263,11 @@ const AuthenticatedHeader = () => {
               className="font-bold text-white truncate max-w-[7rem] break-words"
               title={memberDetails?.name || "User"}
             >
-              {memberDetails?.name || "User"}
+              {memberDetails?.name || "Loading..."}
             </p>
             {/* User Status */}
             <p className="flex items-center gap-2">
+              {/* {console.log(color)} */}
               <span
                 className={`w-3 h-3 rounded-full ${
                   color === "Green"
@@ -267,7 +278,7 @@ const AuthenticatedHeader = () => {
                 }`}
               ></span>
               <span className="text-sm font-medium text-gray-300">
-                {memberDetails?.status || "Inactive"}
+                {memberDetails?.status || "loading..."}
               </span>
             </p>
           </div>
@@ -373,7 +384,6 @@ const AuthenticatedHeader = () => {
                             page * rowsPerPage + rowsPerPage
                           )
                           .map((event) => {
-                            console.log(event);
                             return (
                               <TableRow key={event.event_id}>
                                 <TableCell>
