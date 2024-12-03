@@ -77,7 +77,6 @@ const UpcomingEvents = () => {
       toast.error(`You do not have the role '${role}' to participate.`);
       return;
     }
-
     setParticipationLoading(event.eventId);
     try {
       const response = await handleParticipation(
@@ -111,19 +110,16 @@ const UpcomingEvents = () => {
 
   return (
     <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 p-6 -mt-10">
-      <h2 className="text-2xl font-bold mb-6 text-center col-span-full">
-        Upcoming Events
-      </h2>
       {events.length > 0 ? (
         events.map((event) => (
           <div
             key={event.event_id}
-            className="bg-black shadow-lg rounded-lg overflow-hidden"
+            className="bg-white shadow-lg rounded-lg overflow-hidden"
           >
             {/* Image Section */}
             <div className="h-40 bg-gray-200">
               <img
-                src="https://via.placeholder.com/400x200?text=Event+Image"
+                src="https://res.cloudinary.com/dkncy2ebu/image/upload/v1732941697/playmakershub.png"
                 alt={event.event_title}
                 className="object-cover w-full h-full"
               />
@@ -168,7 +164,7 @@ const UpcomingEvents = () => {
                           <span className="text-gray-700 font-medium capitalize">
                             {role} ({data.required})
                           </span>
-                          {isRoleFull  ? (
+                          {isRoleFull ? (
                             <span className="text-sm text-red-500 font-medium">
                               Full
                             </span>

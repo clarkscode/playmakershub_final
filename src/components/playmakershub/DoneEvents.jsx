@@ -26,7 +26,7 @@ const DoneEvents = () => {
         musicians_required (
           guitarist,
           keyboardist,
-          vocalists,
+          vocalist,
           bassist,
           percussionist
         ),

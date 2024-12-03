@@ -137,7 +137,7 @@ const MemberOrganization = () => {
         events: 0,
         authid: authData.user.id,
       };
-      // console.log(password);
+      console.log("member password", password);
       const { error: memberError } = await supabase
         .from("members_orgs")
         .insert(memberData);
@@ -310,7 +310,7 @@ const MemberOrganization = () => {
               return (
                 <div
                   key={idx}
-                  className="relative cursor-pointer"
+                  className="relative cursor-pointer flex"
                   onClick={() => handleViewDetails(member)}
                 >
                   {/* Dynamic "New" Badge */}

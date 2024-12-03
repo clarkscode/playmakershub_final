@@ -59,7 +59,7 @@ export const createBookingProcess = async (formData) => {
         {
           event_id: eventId,
           guitarist: formData.guitarist,
-          vocalists: formData.vocalist,
+          vocalist: formData.vocalist,
           bassist: formData.bassist,
           keyboardist: formData.keyboardist,
           percussionist: formData.percussionist,
@@ -269,7 +269,7 @@ export const retrieveOngoingEvents = async () => {
         musicians_required (
           guitarist,
           keyboardist,
-          vocalists,
+          vocalist,
           bassist,
           percussionist
         ),
@@ -300,8 +300,8 @@ export const retrieveOngoingEvents = async () => {
           required: musicianData.keyboardist || 0,
           participants: [],
         },
-        vocalists: {
-          required: musicianData.vocalists || 0,
+        vocalist: {
+          required: musicianData.vocalist || 0,
           participants: [],
         },
         bassist: {
@@ -329,7 +329,7 @@ export const retrieveOngoingEvents = async () => {
       const totalMusicians =
         roles.guitarist.required +
         roles.keyboardist.required +
-        roles.vocalists.required +
+        roles.vocalist.required +
         roles.bassist.required +
         roles.percussionist.required;
 
@@ -361,7 +361,7 @@ export const retrievePublishedEvents = async () => {
         musicians_required (
           guitarist,
           keyboardist,
-          vocalists,
+          vocalist,
           bassist,
           percussionist
         ),
@@ -392,8 +392,8 @@ export const retrievePublishedEvents = async () => {
           required: musicianData.keyboardist || 0,
           participants: [],
         },
-        vocalists: {
-          required: musicianData.vocalists || 0,
+        vocalist: {
+          required: musicianData.vocalist || 0,
           participants: [],
         },
         bassist: {
@@ -421,7 +421,7 @@ export const retrievePublishedEvents = async () => {
       const totalMusicians =
         roles.guitarist.required +
         roles.keyboardist.required +
-        roles.vocalists.required +
+        roles.vocalist.required +
         roles.bassist.required +
         roles.percussionist.required;
 
@@ -474,7 +474,7 @@ export const fetchPastEvents = async () => {
         musicians_required (
           guitarist,
           keyboardist,
-          vocalists,
+          vocalist,
           bassist,
           percussionist
         ),
@@ -501,7 +501,7 @@ export const fetchPastEvents = async () => {
       const musicians = {
         guitarist: { required: 0, participants: [] },
         keyboardist: { required: 0, participants: [] },
-        vocalists: { required: 0, participants: [] },
+        vocalist: { required: 0, participants: [] },
         bassist: { required: 0, participants: [] },
         percussionist: { required: 0, participants: [] },
       };
