@@ -22,7 +22,8 @@ import {
 import { FaBell } from "react-icons/fa";
 import CloseIcon from "@mui/icons-material/Close";
 import CodeIcon from "@mui/icons-material/Code";
-
+import SupervisorAccountIcon from "@mui/icons-material/SupervisorAccount";
+import WorkspacePremiumIcon from "@mui/icons-material/WorkspacePremium";
 const AuthenticatedHeader = () => {
   const navigate = useNavigate();
   const [user, setUser] = useState(null);
@@ -513,32 +514,15 @@ const AuthenticatedHeader = () => {
                 </div>
               </div>
             ) : memberDetails?.is_admin ? (
-              <div className="bg-blue-50 border-l-4 border-blue-400 p-4 rounded-md shadow-md mb-6">
+              <div className="bg-[#46152C]  p-2  mb-6">
                 <div className="flex items-center">
                   <div className="flex-shrink-0">
-                    <svg
-                      className="h-6 w-6 text-blue-400"
-                      xmlns="http://www.w3.org/2000/svg"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                      strokeWidth={2}
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        d="M13 16h-1v-4h-1m1-4h.01M12 19c-4.418 0-8-1.79-8-4V7a4 4 0 014-4h8a4 4 0 014 4v8c0 2.21-3.582 4-8 4z"
-                      />
-                    </svg>
+                    <WorkspacePremiumIcon className="h-6 w-6 text-white" />
                   </div>
                   <div className="ml-3">
-                    <h3 className="text-lg font-semibold text-blue-800">
-                      Jayvve Continedo
-                    </h3>
-                    <p className="mt-1 text-sm text-blue-700">
-                      Jayvve Continedo is the President of Playmakers. He plays
-                      a key role in managing the platform and ensuring its
-                      success.
+                    <p className="text-sm text-white">
+                      {memberDetails.first_name} {memberDetails.last_name} is
+                      the President of Playmakers.
                     </p>
                   </div>
                 </div>
