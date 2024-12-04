@@ -30,17 +30,41 @@ const UpcomingEvents = () => {
 
     const fetchMemberDetails = async (authId) => {
       try {
+        // Access user metadata directly
+        const userMetadata = user?.user_metadata || {};
+        const isAdmin = userMetadata.is_admin || false;
+        const isSuperAdmin = userMetadata.is_super_admin || false;
+
+        // If the user is an admin or developer (super admin), show an appropriate error message
+        if (isAdmin || isSuperAdmin) {
+          // toast.error("Admins and developers cannot participate in events.");
+          console.log("Admins and developers cannot participate in events.");
+          setMemberDetails(null);
+          // Reset member details
+          return;
+        }
+
+        // Query the `members_orgs` table
         const { data, error } = await supabase
           .from("members_orgs")
           .select("*")
           .eq("authid", authId)
           .single();
 
-        if (error) {
-          console.error("Error fetching member details:", error.message);
-        } else {
-          setMemberDetails(data);
+        if (error || !data) {
+          // If no member data is found, assume the user is an admin or developer
+          // toast.error(
+          //   "No member record found. Only members can participate in events."
+          // );
+          console.error(
+            "You are admin. Only members can participate in events."
+          );
+          setMemberDetails(null); // Reset member details
+          return;
         }
+
+        // Set member details if found
+        setMemberDetails(data);
       } catch (err) {
         console.error("Error fetching member details:", err.message);
       }
@@ -49,7 +73,21 @@ const UpcomingEvents = () => {
     const fetchOngoingEvents = async () => {
       try {
         const ongoingEvents = await retrieveOngoingEvents();
-        setEvents(ongoingEvents);
+        // Filter out duplicate participations for events
+        const cleanedEvents = ongoingEvents.map((event) => {
+          Object.keys(event.musicians).forEach((role) => {
+            const roleData = event.musicians[role];
+            // Ensure participants list has no duplicates
+            const uniqueParticipants = roleData.participants.filter(
+              (value, index, self) =>
+                index ===
+                self.findIndex((participant) => participant.id === value.id)
+            );
+            roleData.participants = uniqueParticipants;
+          });
+          return event;
+        });
+        setEvents(cleanedEvents);
       } catch (error) {
         console.error("Failed to fetch ongoing events:", error);
       } finally {
@@ -73,12 +111,46 @@ const UpcomingEvents = () => {
     }
 
     const memberRoles = JSON.parse(memberDetails.role || "[]");
+
     if (!memberRoles.includes(role)) {
       toast.error(`You do not have the role '${role}' to participate.`);
       return;
     }
-    setParticipationLoading(event.eventId);
+
+    // setParticipationLoading(event.eventId);
     try {
+      setParticipationLoading(event.eventId);
+
+      // Fetch the required statuses for the event from the status_required table
+      const { data: statusRequired, error: statusError } = await supabase
+        .from("status_required")
+        .select("status_name")
+        .eq("event_id", event.event_id)
+        .single();
+
+      if (statusError || !statusRequired) {
+        toast.error("Failed to fetch status requirements for the event.");
+        console.error("Error fetching status_required:", statusError?.message);
+        console.log("Error fetching status_required:", statusError?.message);
+        console.log("event id ", event.event_id);
+        return;
+      }
+
+      const requiredStatuses = statusRequired.status_name || [];
+      const memberStatus = memberDetails.status;
+      // `status` column in `members_orgs`
+      console.log("member status", memberStatus);
+      console.log("required Statuses on event", requiredStatuses);
+      // Check if the member's status is in the required statuses
+      if (!requiredStatuses.includes(memberStatus)) {
+        toast.error(
+          `You are ineligible to participate in this event. Required: ${requiredStatuses.join(
+            ", "
+          )}`
+        );
+        return;
+      }
+
       const response = await handleParticipation(
         user.id,
         event,
@@ -97,6 +169,123 @@ const UpcomingEvents = () => {
       toast.error("An error occurred while participating.");
     } finally {
       setParticipationLoading(null);
+    }
+  };
+
+  const handleCancelParticipation = async (event) => {
+    if (!user) {
+      toast.error("User not logged in.");
+      return;
+    }
+
+    try {
+      // Step 1: Add a backout entry for this user and event
+      const { error: backoutError } = await supabase
+        .from("backouts")
+        .insert([{ user_id: memberDetails.id, event_id: event.event_id }]);
+
+      if (backoutError) {
+        console.error("Error adding backout entry:", backoutError.message);
+        toast.error("Failed to cancel participation.");
+        return;
+      }
+
+      // Step 2: Count the user's total backouts
+      const { data: backoutCountData, error: backoutCountError } =
+        await supabase
+          .from("backouts")
+          .select("id", { count: "exact" })
+          .eq("user_id", memberDetails.id);
+
+      if (backoutCountError) {
+        console.error(
+          "Error fetching backout count:",
+          backoutCountError.message
+        );
+        toast.error("Failed to update user status.");
+        return;
+      }
+
+      const backoutCount = backoutCountData.length;
+
+      // Step 3: Determine the new status based on backout count
+      let newStatus = memberDetails.status;
+      if (backoutCount === 1) {
+        newStatus = "inactive";
+      } else if (backoutCount >= 2) {
+        newStatus = "probationary";
+      }
+
+      // Step 4: Update the member's status
+      const { error: updateStatusError } = await supabase
+        .from("members_orgs")
+        .update({ status: newStatus })
+        .eq("id", memberDetails.id);
+
+      if (updateStatusError) {
+        console.error(
+          "Error updating member status:",
+          updateStatusError.message
+        );
+        toast.error("Failed to update user status.");
+        return;
+      }
+
+      // Step 5: Remove the user's participation in the event
+      const { error: removeParticipationError } = await supabase
+        .from("participation")
+        .delete()
+        .eq("user_id", user.id)
+        .eq("event_id", event.event_id);
+
+      if (removeParticipationError) {
+        console.error(
+          "Error removing user participation:",
+          removeParticipationError.message
+        );
+        toast.error("Failed to cancel participation.");
+        return;
+      }
+
+      toast.success("Participation canceled successfully!");
+
+      // Step 6: Insert a notification for admin about the member's backout
+      const { error: notificationError } = await supabase
+        .from("notifications")
+        .insert([
+          {
+            event_id: event.event_id,
+            user_id: null, // Admin notification
+            notification_type: "web",
+            content: `${memberDetails.name} has backed out of the event ${event.event_title}.`,
+            sent_at: new Date(),
+          },
+        ]);
+
+      if (notificationError) {
+        console.error(
+          `Error inserting notification for backout of member ${memberDetails.name}  from event ${event.event_title}:`,
+          notificationError
+        );
+      } else {
+        console.log(
+          `Notification sent about member ${memberDetails.first_name} ${memberDetails.last_name} backout from event ${event.event_title}`
+        );
+      }
+      // Step 7: Refresh the events and member details
+      const refreshedEvents = await retrieveOngoingEvents();
+      setEvents(refreshedEvents);
+
+      const { data: updatedMemberDetails } = await supabase
+        .from("members_orgs")
+        .select("*")
+        .eq("id", memberDetails.id)
+        .single();
+
+      setMemberDetails(updatedMemberDetails);
+    } catch (error) {
+      console.error("Error canceling participation:", error);
+      toast.error("An error occurred while canceling participation.");
     }
   };
 
@@ -154,8 +343,11 @@ const UpcomingEvents = () => {
                   .filter(([_, data]) => data.required > 0)
                   .map(([role, data], index) => {
                     const alreadyParticipated = data.participants.some(
-                      (participant) => participant.id === user?.id
+                      (participant) => {
+                        return participant.id === user?.id;
+                      }
                     );
+
                     const isRoleFull =
                       data.participants.length >= data.required;
                     return (
@@ -188,9 +380,17 @@ const UpcomingEvents = () => {
                             )
                           )}
                           {alreadyParticipated && (
-                            <span className="text-sm text-green-500 font-medium">
-                              Joined
-                            </span>
+                            <div className="flex items-center gap-2">
+                              <span className="text-sm text-green-500 font-medium">
+                                Joined
+                              </span>
+                              <button
+                                onClick={() => handleCancelParticipation(event)}
+                                className="text-sm text-white px-4 py-1 rounded bg-red-500 hover:bg-red-600"
+                              >
+                                Cancel
+                              </button>
+                            </div>
                           )}
                         </div>
                         {/* Display participants */}

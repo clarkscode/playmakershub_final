@@ -23,11 +23,15 @@ const PendingEvents = () => {
   }, []);
 
   if (loading) {
-    return <div>Loading...</div>;
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <div className="w-16 h-16 border-4 border-t-transparent border-[#5C1B33] rounded-full animate-spin"></div>
+      </div>
+    );
   }
 
   if (pendingEvents.length === 0) {
-    return <div>No pending events found.</div>;
+    return <div className="text-center mt-8">No pending events found</div>;
   }
 
   return (

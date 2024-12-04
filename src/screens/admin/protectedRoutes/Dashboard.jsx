@@ -13,6 +13,7 @@ const Dashboard = () => {
     totalEvents: 0,
     activeMembers: 0,
     completedEvents: 0,
+    totalMembers: 0,
   });
 
   useEffect(() => {
@@ -21,19 +22,23 @@ const Dashboard = () => {
         .from("events")
         .select("event_id");
       const { data: activeMembers, error: membersError } = await supabase
-        .from("users")
+        .from("members_orgs")
         .select("id")
-        .eq("participation_status", "Green");
+        .eq("status", "active");
+      const { data: totalMembers, error: totalMembersError } = await supabase
+        .from("members_orgs")
+        .select("id");
       const { data: completedEvents, error: completedError } = await supabase
         .from("events")
         .select("event_id")
         .eq("event_status", "Completed");
 
-      if (eventsError || membersError || completedError) {
+      if (eventsError || membersError || completedError || totalMembersError) {
         console.error("Error fetching stats:", {
           eventsError,
           membersError,
           completedError,
+          totalMembersError,
         });
         return;
       }
@@ -41,6 +46,7 @@ const Dashboard = () => {
       setStats({
         totalEvents: events.length,
         activeMembers: activeMembers.length,
+        totalMembers: totalMembers.length,
         completedEvents: completedEvents.length,
       });
     };
@@ -65,12 +71,13 @@ const Dashboard = () => {
         {/* Dashboard Content */}
         <div className="p-4 animate__animated animate__fadeIn">
           {/* Stats Section */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <StatCard label="No. of total events" value={stats.totalEvents} />
             <StatCard
               label="No. of active members"
               value={stats.activeMembers}
             />
+            <StatCard label="No. of total members" value={stats.totalMembers} />
             <StatCard
               label="No. of completed events"
               value={stats.completedEvents}

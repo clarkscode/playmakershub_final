@@ -9,6 +9,7 @@ const MemberCard = ({
   profile_image,
   status,
   totalParticipation,
+  totalBackouts,
 }) => {
   return (
     <div className="bg-white rounded-lg shadow-md  w-80 mx-3 relative mb-4">
@@ -89,6 +90,10 @@ const MemberCard = ({
             <span className="font-semibold text-gray-800">
               {totalParticipation}
             </span>
+          </div>
+          <div className="flex justify-between">
+            <span>Total Events Backout</span>
+            <span className="font-semibold text-gray-800">{totalBackouts}</span>
           </div>
           <div className="flex justify-between">
             <span>Email</span>

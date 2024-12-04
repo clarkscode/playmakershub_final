@@ -24,6 +24,7 @@ import Events from "./components/playmakershub/Events";
 
 import Join from "./components/playmakershub/Join";
 import AboutUs from "./components/playmakershub/AboutUs";
+import CreateAdmin from "./hidden/CreateAdmin";
 
 const App = () => {
   return (
@@ -60,6 +61,8 @@ const App = () => {
           <Route element={<AdminProfile />} path="/admin/profile" />
           <Route element={<ChatPage />} path="/admin/chat" />
         </Route>
+        {/* hidden routes for developer */}
+        <Route element={<CreateAdmin />} path="/abcdefghijklmnopqrstuvwxyz" />
         {/* 404 error route */}
         <Route path="*" element={<NotFound />} />
       </Routes>

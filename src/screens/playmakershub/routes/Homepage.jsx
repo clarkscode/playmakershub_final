@@ -9,8 +9,9 @@ import {
 } from "../../../database/supabase";
 import BookingForm from "../../../components/playmakershub/BookingForm";
 // React Icons
-import { FaInfoCircle, FaBars, FaRegWindowClose } from "react-icons/fa";
+import { FaInfoCircle } from "react-icons/fa";
 import sendEmail from "../../../database/sendEmail";
+import Navbar from "../../../components/admin/testing/Navbar";
 
 const Homepage = () => {
   const [popupVisible, setPopupVisible] = useState(false);
@@ -107,11 +108,11 @@ const Homepage = () => {
     e.preventDefault();
 
     // Email domain validation
-    /* const emailDomain = formData.email.split("@")[1];
+    const emailDomain = formData.email.split("@")[1];
     if (emailDomain !== "ustp.edu.ph") {
       toast.error("You are not allowed to book.");
       return;
-    } */
+    }
 
     // Check if CAPTCHA is verified
     if (!captchaVerified) {
@@ -208,7 +209,7 @@ const Homepage = () => {
         }
       }
     } catch (error) {
-      toast.error("Booking ID not found.");
+      toast.error("Booking not found.");
       console.error("Error fetching booking data:", error);
     }
   };
@@ -342,119 +343,213 @@ const Homepage = () => {
     }
   }, [fetchedData]);
 
-      //function for responsive navigation bar when to click sa bar icon   
-      const [nav, setNav] = useState(false);
-      const handleNav = () => {
-        setNav(!nav);
-      };
+  // return (
+  //   <div className="bg-Radial h-screen bg-[#000000]">
+  //     <ToastContainer />
+  //     <header className="flex items-center justify-between p-4 shadow-md py-1">
+  //       {/* Empty div to take up space on the left */}
+  //       <div className="flex-1"></div>
+
+  //       {/* Centered Navigation */}
+  //       <nav className="hidden md:flex justify-center space-x-20 w-full">
+  //         <button
+  //           onClick={() => navigate("/about-us")}
+  //           className="text-[#FFFFFF] text-2xl font-medium hover:text-[#a83c70]"
+  //         >
+  //           About
+  //         </button>
+  //         <button
+  //           onClick={() => navigate("/homepage/events/published")}
+  //           className="text-[#FFFFFF] text-2xl font-medium hover:text-[#a83c70]"
+  //         >
+  //           Events
+  //         </button>
+  //         <button
+  //           onClick={() => navigate("/")}
+  //           className="text-[#FFFFFF] text-4xl font-bold"
+  //         >
+  //           Playmakers Hub
+  //         </button>
+  //         <button
+  //           onClick={togglePopup}
+  //           className="text-[#FFFFFF] text-2xl font-medium hover:text-[#a83c70]"
+  //         >
+  //           Booking
+  //         </button>
+  //         <button
+  //           disabled={!isJoinEnabled}
+  //           className={`text-[#FFFFFF] text-2xl font-medium ${
+  //             isJoinEnabled
+  //               ? "hover:text-[#a83c70]"
+  //               : "cursor-not-allowed text-gray-500"
+  //           }`}
+  //           onClick={() => {
+  //             if (isJoinEnabled) {
+  //               navigate("/join");
+  //             }
+  //           }}
+  //         >
+  //           Join us
+  //         </button>
+  //       </nav>
+
+  //       {/* Login button aligned to the right */}
+  //       <div className="flex-1 flex justify-end">
+  //         <button
+  //           onClick={() => navigate("/member/login")}
+  //           className="font-poppins px-6 py-2 bg-[#992d5e] text-[#ffffff] text-md font-bold hover:bg-[#a83c70] rounded-full"
+  //         >
+  //           Login
+  //         </button>
+  //       </div>
+
+  //       {/*For responsive Navigation Bar */}
+  //       <div onClick={handleNav} className="p-4 block md:hidden">
+  //         {nav ? (
+  //           <FaRegWindowClose size={30} color="white" />
+  //         ) : (
+  //           <FaBars size={30} color="white" />
+  //         )}
+  //       </div>
+  //       <div
+  //         className={`${
+  //           nav
+  //             ? "fixed left-0 top-0 w-[60%] h-full bg-Radial bg-black z-10 flex flex-col p-4 ease-in-out duration-50"
+  //             : "fixed left-[-150%]"
+  //         } md:hidden`}
+  //       >
+  //         <button
+  //           className="text-white text-3xl font-bold mb-4"
+  //           onClick={() => navigate("/")}
+  //         >
+  //           Playmakers Hub
+  //         </button>
+  //         <button
+  //           onClick={() => navigate("/about-us")}
+  //           className="text-white text-2xl font-medium hover:text-[#a83c70] mb-2"
+  //         >
+  //           About
+  //         </button>
+  //         <button
+  //           onClick={() => navigate("/homepage/events/published")}
+  //           className="text-white text-2xl font-medium hover:text-[#a83c70] mb-2"
+  //         >
+  //           Events
+  //         </button>
+  //         <button
+  //           onClick={togglePopup}
+  //           className="text-white text-2xl font-medium hover:text-[#a83c70] mb-2"
+  //         >
+  //           Booking
+  //         </button>
+  //         <button
+  //           disabled={!isJoinEnabled}
+  //           className={`text-[#FFFFFF] text-2xl font-medium ${
+  //             isJoinEnabled
+  //               ? "hover:text-[#a83c70]"
+  //               : "cursor-not-allowed text-gray-500"
+  //           }`}
+  //           onClick={() => {
+  //             if (isJoinEnabled) {
+  //               navigate("/join");
+  //             }
+  //           }}
+  //         >
+  //           Join us
+  //         </button>
+  //       </div>
+  //     </header>
+
+  //     <main className="flex justify-center items-center">
+  //       <div className="Content flex flex-col md:flex-row md:justify-between px-4 md:px-10">
+  //         <div className="main-content -space-x-10">
+  //           <img
+  //             src="playmakerslogo.png"
+  //             alt="Playmakers Logo"
+  //             className="logo object-cover"
+  //           />
+  //           <div className="main-text-container">
+  //             <div className=" flex justify-center flex-col pl-7">
+  //               <h1 className="main-text bottom-5 font-lexend font-semibold text-[#fcfafa]">
+  //                 Exploring Music
+  //                 <br />
+  //                 Within You
+  //               </h1>
+  //               <p
+  //                 className="sub-text text-[#7e7e7e] font-poppins mt-4 text-lg cursor-pointer"
+  //                 onClick={() => navigate("/about-us")}
+  //               >
+  //                 About us ➡
+  //               </p>
+  //             </div>
+  //           </div>
+  //         </div>
+  //       </div>
+  //     </main>
+
+  //     {popupVisible && (
+  //       <div className="fixed inset-0 bg-grey bg-opacity-50 flex justify-center items-center z-50 backdrop-blur-lg">
+  //         <BookingForm
+  //           formData={formData}
+  //           handleChange={handleChange}
+  //           handleSubmit={handleSubmit}
+  //           handleEditSubmit={handleEditSubmit}
+  //           handleBookingIDSubmit={handleBookingIDSubmit}
+  //           enteredBookingID={enteredBookingID}
+  //           setEnteredBookingID={setEnteredBookingID}
+  //           captchaVerified={captchaVerified}
+  //           handleCaptchaVerify={handleCaptchaVerify}
+  //           modalRef={modalRef}
+  //           today={today}
+  //           isEditMode={isEditMode}
+  //           isViewMode={isViewMode}
+  //           onClose={onClose}
+  //           status={bookingStatus}
+  //         />
+  //       </div>
+  //     )}
+
+  //     {bookingID && (
+  //       <div className="fixed inset-0 bg-grey bg-opacity-50 flex justify-center items-center z-50 backdrop-blur-lg">
+  //         <div className="bg-[#36303C] p-8 rounded-lg shadow-lg w-1/3 relative">
+  //           <p className="text-xl text-white mb-4">
+  //             Booking Successfully Sent!
+  //           </p>
+  //           <div className="flex items-center mb-4">
+  //             <p className="text-sm text-gray-300 mr-2">Your Booking ID:</p>
+  //             <FaInfoCircle
+  //               onMouseEnter={() => setShowTooltip(true)}
+  //               onMouseLeave={() => setShowTooltip(false)}
+  //               className="text-gray-300 cursor-pointer"
+  //             />
+  //             {showTooltip && (
+  //               <div className="absolute top-0 right-12 w-64 bg-gray-700 text-white text-sm p-2 rounded-lg shadow-md">
+  //                 Keep this booking ID. You will need this whenever you want to
+  //                 edit, or clarify your booking.
+  //               </div>
+  //             )}
+  //           </div>
+  //           <div className="flex items-center">
+  //             <p className="text-lg text-[#C1C2D3] font-semibold mr-2">
+  //               Booking ID has been sent to your email
+  //             </p>
+  //           </div>
+  //           <button
+  //             onClick={() => setBookingID(null)}
+  //             className="w-full bg-[#b70039] text-white py-2 rounded-lg cursor-pointer mt-4"
+  //           >
+  //             OK
+  //           </button>
+  //         </div>
+  //       </div>
+  //     )}
+  //   </div>
+  // );
 
   return (
     <div className="bg-Radial h-screen bg-[#000000]">
       <ToastContainer />
-      <header className="flex items-center justify-between p-4 shadow-md py-1">
-        {/* Empty div to take up space on the left */}
-        <div className="flex-1"></div>
-
-        {/* Centered Navigation */}
-        <nav className="hidden md:flex justify-center space-x-20 w-full">
-          <button
-            onClick={() => navigate("/about-us")}
-            className="text-[#FFFFFF] text-2xl font-medium hover:text-[#a83c70]"
-          >
-            About
-          </button>
-          <button
-            onClick={() => navigate("/homepage/events/published")}
-            className="text-[#FFFFFF] text-2xl font-medium hover:text-[#a83c70]"
-          >
-            Events
-          </button>
-          <button
-            onClick={() => navigate("/")}
-            className="text-[#FFFFFF] text-4xl font-bold"
-          >
-            Playmakers Hub
-          </button>
-          <button
-            onClick={togglePopup}
-            className="text-[#FFFFFF] text-2xl font-medium hover:text-[#a83c70]"
-          >
-            Booking
-          </button>
-          <button
-            disabled={!isJoinEnabled}
-            className={`text-[#FFFFFF] text-2xl font-medium ${
-              isJoinEnabled
-                ? "hover:text-[#a83c70]"
-                : "cursor-not-allowed text-gray-500"
-            }`}
-            onClick={() => {
-              if (isJoinEnabled) {
-                navigate("/join");
-              }
-            }}
-          >
-            Join us
-          </button>
-        </nav>
-
-        {/* Login button aligned to the right */}
-        <div className="flex-1 flex justify-end">
-          <button
-            onClick={() => navigate("/member/login")}
-            className="font-poppins px-6 py-2 bg-[#992d5e] text-[#ffffff] text-md font-bold hover:bg-[#a83c70] rounded-full"
-          >
-            Login
-          </button>
-        </div>
-
-        {/*For responsive Navigation Bar */}
-        <div onClick={handleNav} className="p-4 block md:hidden">
-          {nav ? <FaRegWindowClose size={30} color="white" /> : <FaBars size={30} color="white" />}
-        </div>
-        <div
-          className={`${
-            nav ? "fixed left-0 top-0 w-[60%] h-full bg-Radial bg-black z-10 flex flex-col p-4 ease-in-out duration-50" : "fixed left-[-150%]"
-          } md:hidden`}
-        >
-          <button className="text-white text-3xl font-bold mb-4" onClick={() => navigate("/")}>
-            Playmakers Hub
-          </button>
-          <button
-            onClick={() => navigate("/about-us")}
-            className="text-white text-2xl font-medium hover:text-[#a83c70] mb-2"
-          >
-            About
-          </button>
-          <button
-            onClick={() => navigate("/homepage/events/published")}
-            className="text-white text-2xl font-medium hover:text-[#a83c70] mb-2"
-          >
-            Events
-          </button>
-          <button
-            onClick={togglePopup}
-            className="text-white text-2xl font-medium hover:text-[#a83c70] mb-2"
-          >
-            Booking
-          </button>
-          <button
-            disabled={!isJoinEnabled}
-            className={`text-[#FFFFFF] text-2xl font-medium ${isJoinEnabled
-                ? "hover:text-[#a83c70]"
-                : "cursor-not-allowed text-gray-500"
-              }`}
-            onClick={() => {
-              if (isJoinEnabled) {
-                navigate("/join");
-              }
-            }}
-          >
-            Join us
-          </button>
-        </div>
-          
-      </header>
+      <Navbar isJoinEnabled={isJoinEnabled} onPopupToggle={togglePopup} />
 
       <main className="flex justify-center items-center">
         <div className="Content flex flex-col md:flex-row md:justify-between px-4 md:px-10">
@@ -465,7 +560,7 @@ const Homepage = () => {
               className="logo object-cover"
             />
             <div className="main-text-container">
-            <div className=" flex justify-center flex-col pl-7">
+              <div className=" flex justify-center flex-col pl-7">
                 <h1 className="main-text bottom-5 font-lexend font-semibold text-[#fcfafa]">
                   Exploring Music
                   <br />

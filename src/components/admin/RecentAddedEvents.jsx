@@ -27,11 +27,17 @@ export const RecentAddedEvents = () => {
   }, []);
 
   if (loading) {
-    return <p>Loading events...</p>;
+    <div className="flex items-center justify-center h-screen">
+      <div className="w-16 h-16 border-4 border-t-transparent border-[#5C1B33] rounded-full animate-spin"></div>
+    </div>;
   }
 
   if (events.length === 0) {
-    return <p>No events found.</p>;
+    return (
+      <div className="text-center text-gray-500 py-4">
+        No recent added events found.
+      </div>
+    );
   }
 
   return (

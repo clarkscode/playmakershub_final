@@ -151,6 +151,26 @@ const EventCard = ({
     }
 
     try {
+      // Insert statusesToNotify along with event_id into status_required table
+      const { data: statusRequiredData, error: statusRequiredError } =
+        await supabase.from("status_required").insert([
+          {
+            event_id: eventId,
+            status_name: statusesToNotify, // Array of statuses
+          },
+        ]);
+
+      if (statusRequiredError) {
+        throw new Error(
+          `Error inserting statuses into status_required table: ${statusRequiredError.message}`
+        );
+      }
+
+      console.log(
+        "Statuses successfully inserted into status_required:",
+        statusRequiredData
+      );
+
       // Fetch members based on participation status
       const { data: members, error } = await supabase
         .from("members_orgs")

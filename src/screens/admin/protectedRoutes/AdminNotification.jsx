@@ -35,7 +35,7 @@ const AdminNotification = () => {
       )
       .subscribe();
 
-    console.log(notifications);
+    // console.log(notifications);
     return () => {
       // Cleanup subscription on unmount
       supabase.removeChannel(subscription);
@@ -216,36 +216,39 @@ const AdminNotification = () => {
             ) : error ? (
               <p className="text-red-500">{error}</p>
             ) : notifications.length > 0 ? (
-              <ul className="space-y-4">
-                {notifications.map((notification, index) => (
-                  <li
-                    key={index}
-                    className={`p-4 border rounded-md shadow-sm ${
-                      isNewNotification(notification.sent_at)
-                        ? "bg-green-100 border-green-500"
-                        : "bg-gray-100"
-                    } relative`}
-                  >
-                    <p className="text-gray-700">{notification.content}</p>
-                    <span className="text-gray-500 text-sm">
-                      Sent at: {new Date(notification.sent_at).toLocaleString()}
-                    </span>
-                    {isNewNotification(notification.sent_at) && (
-                      <Chip
-                        icon={<NewBadgeIcon />}
-                        label="New"
-                        size="small"
-                        color="white"
-                        className="absolute top-2 right-2"
-                        sx={{
-                          backgroundColor: "#5C1B33",
-                          color: "#FFFFFF",
-                        }}
-                      />
-                    )}
-                  </li>
-                ))}
-              </ul>
+              <div className="max-h-[40rem] overflow-y-auto">
+                <ul className="space-y-4">
+                  {notifications.map((notification, index) => (
+                    <li
+                      key={index}
+                      className={`p-4 border rounded-md shadow-sm ${
+                        isNewNotification(notification.sent_at)
+                          ? "bg-green-100 border-green-500"
+                          : "bg-gray-100"
+                      } relative`}
+                    >
+                      <p className="text-gray-700">{notification.content}</p>
+                      <span className="text-gray-500 text-sm">
+                        Sent at:{" "}
+                        {new Date(notification.sent_at).toLocaleString()}
+                      </span>
+                      {isNewNotification(notification.sent_at) && (
+                        <Chip
+                          icon={<NewBadgeIcon />}
+                          label="New"
+                          size="small"
+                          color="white"
+                          className="absolute top-2 right-2"
+                          sx={{
+                            backgroundColor: "#5C1B33",
+                            color: "#FFFFFF",
+                          }}
+                        />
+                      )}
+                    </li>
+                  ))}
+                </ul>
+              </div>
             ) : (
               <p>No notifications to display.</p>
             )}

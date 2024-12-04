@@ -12,7 +12,16 @@ import {
   TablePagination,
   TableRow,
   Typography,
+  Drawer,
+  IconButton,
+  List,
+  ListItem,
+  ListItemText,
+  // ListSubheader,
 } from "@mui/material";
+import { FaBell } from "react-icons/fa";
+import CloseIcon from "@mui/icons-material/Close";
+import CodeIcon from "@mui/icons-material/Code";
 
 const AuthenticatedHeader = () => {
   const navigate = useNavigate();
@@ -25,18 +34,62 @@ const AuthenticatedHeader = () => {
   const [rowsPerPage, setRowsPerPage] = useState(3);
   const [updatedProfile, setUpdatedProfile] = useState({});
   const [color, setColor] = useState("Orange");
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+  const [notifications, setNotifications] = useState([]);
+
   const getCurrentUser = async () => {
     const {
       data: { user },
-      error,
+      error: userError,
     } = await supabase.auth.getUser();
 
-    if (error) {
-      console.error("Error fetching current user:", error.message);
-    } else {
-      setUser(user);
-      fetchMemberDetails(user?.id);
+    if (userError) {
+      console.error("Error fetching current user:", userError.message);
     }
+
+    const userMetadata = user?.user_metadata || {};
+    const isAdmin = userMetadata.is_admin || false;
+    const isSuperAdmin = userMetadata.is_super_admin || false;
+    const role = userMetadata.role || "";
+
+    // Admins and Super Admins
+    if (isAdmin || isSuperAdmin) {
+      // console.log("fuckkkkk", isAdmin);
+      // console.log("fuckkkkk super", isSuperAdmin);
+      setMemberDetails({
+        first_name: userMetadata.first_name || "",
+        last_name: userMetadata.last_name || "",
+        role: role || "",
+        is_super_admin: isSuperAdmin,
+        is_admin: isAdmin,
+      });
+      setUpdatedProfile({
+        first_name: userMetadata.first_name || "",
+        last_name: userMetadata.last_name || "",
+      });
+      return; // No need to fetch `members_orgs` for admins or super admins
+    }
+
+    // Now fetch the corresponding member details from members_orgs using user.id (authId)
+    const { data: memberData, error: memberError } = await supabase
+      .from("members_orgs")
+      .select("id") // Only select the id column
+      .eq("authid", user.id)
+      .single(); // We expect a single result
+
+    if (memberError) {
+      // diri ang error
+      console.log("is admin", isAdmin);
+      console.log("is super admin", isSuperAdmin);
+      console.error("Error fetching member details:", memberError.message);
+      return;
+    }
+
+    setUser(user);
+    fetchMemberDetails(user?.id);
+    fetchNotifications(memberData?.id);
+    // console.log("authenticated user id", user.id);
+    // console.log("member id in members_orgs table", memberData.id);
   };
 
   const handleChangePage = (event, newPage) => {
@@ -56,21 +109,47 @@ const AuthenticatedHeader = () => {
         .eq("authid", authId)
         .single();
 
-      if (error) {
-        console.error("Error fetching member details:", error.message);
+      if (error || !data) {
+        // console.error("Error fetching member details:", error.message);
+        // toast.error("Member details not found. Please contact support.");
+        console.error("Member details not found. Please contact support.");
+        setMemberDetails(null);
+        return;
       } else {
-        const participationStatus = await fetchParticipationStatus(authId);
+        const participationStatus = await fetchParticipationStatus(
+          authId,
+          data.id
+        );
+
         if (participationStatus) {
           console.log("member participation status", participationStatus);
           setColor(participationStatus);
         }
-        setMemberDetails({ ...data });
         fetchParticipatedEvents(authId);
         setMemberDetails(data);
         setUpdatedProfile(data);
       }
     } catch (err) {
-      console.error("Error fetching member details:", err.message);
+      console.error("fetchMemberDetails ERROR:", err);
+    }
+  };
+
+  // Fetch notifications for the logged-in user
+  const fetchNotifications = async (authId) => {
+    try {
+      const { data, error } = await supabase
+        .from("notifications")
+        .select("*")
+        .eq("user_id", authId)
+        .order("sent_at", { ascending: false }); // Order by most recent
+
+      if (error) {
+        console.error("Error fetching notifications:", error.message);
+      } else {
+        setNotifications(data);
+      }
+    } catch (err) {
+      console.error("Error fetching notifications:", err.message);
     }
   };
 
@@ -92,6 +171,7 @@ const AuthenticatedHeader = () => {
         `
         )
         .eq("user_id", authId);
+      // Use members_orgs.id
       // console.log(data);
       if (error) {
         console.error("Error fetching events:", error.message);
@@ -115,6 +195,10 @@ const AuthenticatedHeader = () => {
 
   const togglePopover = () => {
     setIsPopoverVisible(!isPopoverVisible);
+  };
+
+  const toggleDrawer = (isOpen) => {
+    setIsDrawerOpen(isOpen);
   };
 
   const handleInputChange = (e) => {
@@ -147,11 +231,45 @@ const AuthenticatedHeader = () => {
 
   const handleSaveProfile = async () => {
     try {
-      if (!updatedProfile || !user?.id) {
-        console.error("Profile data or user ID is missing");
+      if (memberDetails?.is_admin || memberDetails?.is_super_admin) {
+        // For admins/super admins, ensure `first_name` and `last_name` are present.
+        if (!updatedProfile.first_name || !updatedProfile.last_name) {
+          console.error("Admin profile data is missing required fields.");
+          console.log("Updated Profile:", updatedProfile);
+          return;
+        }
+      } else {
+        // For regular members, ensure `user.id` exists and `updatedProfile` has relevant fields.
+        if (!user?.id) {
+          console.error("User ID is missing for regular member.");
+          console.log("Updated Profile:", updatedProfile);
+          return;
+        }
+      }
+
+      // Update `user_metadata` for admins
+      if (memberDetails?.is_admin || memberDetails?.is_super_admin) {
+        console.log("Updating admin profile...");
+        const { error: adminError } = await supabase.auth.updateUser({
+          data: {
+            first_name: updatedProfile.first_name,
+            last_name: updatedProfile.last_name,
+          },
+        });
+
+        if (adminError) {
+          console.error("Error updating admin profile:", adminError.message);
+          toast.error("Failed to update admin profile.");
+          return;
+        }
+        toast.success("Admin profile updated successfully!");
+        setIsModalOpen(false); // Close modal
+        getCurrentUser(); // Refresh user data
         return;
       }
 
+      // Update `members_orgs` for regular members
+      console.log("Updating member profile...");
       const { error } = await supabase
         .from("members_orgs")
         .update({
@@ -163,18 +281,20 @@ const AuthenticatedHeader = () => {
         .eq("authid", user?.id);
 
       if (error) {
-        console.error("Error updating profile:", error.message);
+        console.error("Error updating member profile:", error.message);
         return;
       }
-      getCurrentUser();
+
+      toast.success("Member profile updated successfully!");
+      getCurrentUser(); // Refresh user data
       setIsModalOpen(false); // Close modal
-      toast.success("Profile updated successfully!");
     } catch (err) {
       console.error("Error saving profile:", err.message);
+      toast.error("An unexpected error occurred while saving the profile.");
     }
   };
 
-  const fetchParticipationStatus = async (authId) => {
+  const fetchParticipationStatus = async (authId, membersId) => {
     try {
       const { data: participations, error } = await supabase
         .from("participation")
@@ -185,30 +305,30 @@ const AuthenticatedHeader = () => {
         console.error("Error fetching participation data:", error.message);
         return "Inactive";
       }
+
+      const { data: backouts, error: backoutError } = await supabase
+        .from("backouts")
+        .select("*")
+        .eq("user_id", membersId);
+
+      if (backoutError) {
+        console.error("Error fetching backout data:", backoutError.message);
+        return "Inactive";
+      }
       console.log("fetchParticipationStatus", participations);
+
       const participationsPerMonth = participations.filter((p) =>
         dayjs(p.event_start_date).isSame(dayjs(), "month")
       ).length;
 
-      const backouts = participations.filter(
-        (p) => p.status === "Backout"
-      ).length;
-      /* 
-      JIECLARKDEV - LATER NA NG NON PARTICIPANTS I THINK BACKOUT OG MONTHLY PARTICIPATION KAY NEEDED
-      https://snipboard.io/R0aLCc.jpg
-      */
-      // const nonParticipations = participations.filter(
-      //   (p) => p.status === "Non-Participation"
-      // ).length;
+      const backoutCount = backouts.length;
 
       console.log("participationsPerMonth", participationsPerMonth);
-      // console.log("nonParticipations", nonParticipations);
-      console.log("backouts", backouts);
+      console.log("backouts", backoutCount);
+
       if (participationsPerMonth >= 2) return "Green";
-      // if (nonParticipations >= 3 || backouts >= 1) return "Orange";
-      // if (nonParticipations >= 5 || backouts >= 2) return "Red";
-      if (backouts >= 1) return "Orange";
-      if (backouts >= 2) return "Red";
+      if (backoutCount === 1) return "Orange";
+      if (backoutCount >= 2) return "Red";
 
       return "Inactive";
     } catch (err) {
@@ -246,7 +366,53 @@ const AuthenticatedHeader = () => {
         </button>
       </nav>
 
-      <div className="relative">
+      <div className="relative flex items-center gap-4">
+        {/* Notifications Icon */}
+        {user && (
+          <button
+            onClick={() => toggleDrawer(true)}
+            className="text-[#FFFFFF] text-2xl font-medium"
+          >
+            <FaBell />
+          </button>
+        )}
+
+        {/* Notifications Drawer */}
+        <Drawer
+          anchor="right"
+          open={isDrawerOpen}
+          onClose={() => toggleDrawer(false)}
+        >
+          <div className="w-80 flex flex-col h-full">
+            <div className="flex items-center justify-between px-4 py-2 shadow-md">
+              <Typography variant="h6">Notifications</Typography>
+              <IconButton onClick={() => toggleDrawer(false)}>
+                <CloseIcon />
+              </IconButton>
+            </div>
+            <div className="p-4 overflow-y-auto flex-1">
+              {notifications.length > 0 ? (
+                <List>
+                  {notifications.map((notification, index) => (
+                    <ListItem key={index} divider>
+                      <ListItemText
+                        primary={notification.content}
+                        secondary={new Date(
+                          notification.sent_at
+                        ).toLocaleString()}
+                      />
+                    </ListItem>
+                  ))}
+                </List>
+              ) : (
+                <Typography className="text-gray-500">
+                  No new notifications.
+                </Typography>
+              )}
+            </div>
+          </div>
+        </Drawer>
+
         {/* User Profile Image */}
         <div className="flex gap-1 items-center w-40">
           <img
@@ -259,34 +425,54 @@ const AuthenticatedHeader = () => {
           />
           <div className="flex flex-col items-start w-full">
             {/* User Name */}
-            <p
-              className="font-bold text-white truncate max-w-[7rem] break-words"
-              title={memberDetails?.name || "User"}
-            >
-              {memberDetails?.name || "Loading..."}
-            </p>
-            {/* User Status */}
-            <p className="flex items-center gap-2">
-              {/* {console.log(color)} */}
-              <span
-                className={`w-3 h-3 rounded-full ${
-                  color === "Green"
-                    ? "bg-green-500"
-                    : color === "Orange"
-                    ? "bg-orange-500"
-                    : "bg-red-500"
-                }`}
-              ></span>
-              <span className="text-sm font-medium text-gray-300">
-                {memberDetails?.status || "loading..."}
-              </span>
-            </p>
+            {memberDetails?.is_admin || memberDetails?.is_super_admin ? (
+              <p
+                className="font-bold text-white truncate max-w-[7rem] break-words"
+                title={
+                  memberDetails?.first_name
+                    ? `${memberDetails.first_name} ${memberDetails.last_name}`
+                    : "Loading..."
+                }
+              >
+                {memberDetails?.first_name
+                  ? `${memberDetails.first_name} ${memberDetails.last_name}`
+                  : "Loading..."}
+              </p>
+            ) : (
+              <p
+                className="font-bold text-white truncate max-w-[7rem] break-words"
+                title={memberDetails?.name || "User"}
+              >
+                {memberDetails?.name || "Loading..."}
+              </p>
+            )}
+            {/* Display Role for Admin or Status for Members */}
+            {memberDetails?.is_admin || memberDetails?.is_super_admin ? (
+              <p className="text-sm font-medium text-gray-300">
+                {memberDetails.role}
+              </p>
+            ) : (
+              <p className="flex items-center gap-2">
+                <span
+                  className={`w-3 h-3 rounded-full ${
+                    color === "Green"
+                      ? "bg-green-500"
+                      : color === "Orange"
+                      ? "bg-orange-500"
+                      : "bg-red-500"
+                  }`}
+                ></span>
+                <span className="text-sm font-medium text-gray-300">
+                  {memberDetails?.status || "loading..."}
+                </span>
+              </p>
+            )}
           </div>
         </div>
 
         {/* Popover Menu */}
         {isPopoverVisible && (
-          <div className="absolute right-0 mt-2 bg-white shadow-lg rounded-md w-48 z-10">
+          <div className="absolute right-0 top-10 mt-2 bg-white shadow-lg rounded-md w-48 z-10">
             <button
               onClick={() => {
                 setIsModalOpen(true); // Open modal
@@ -311,113 +497,234 @@ const AuthenticatedHeader = () => {
         <div className="fixed inset-0 flex items-center justify-center z-20 bg-black bg-opacity-50">
           <div className="bg-white w-1/3 rounded-lg shadow-lg p-6">
             <h3 className="text-lg font-bold mb-4">Edit Profile</h3>
+            {memberDetails?.is_super_admin ? (
+              <div className=" p-4 mb-6">
+                <div className="flex items-center">
+                  <div className="flex-shrink-0">
+                    {/* Use the CodeIcon from MUI */}
+                    <CodeIcon className="h-6 w-6 text-black/80" />
+                  </div>
+                  <div className="ml-3">
+                    <p className="text-sm text-black/80">
+                      {memberDetails.first_name} {memberDetails.last_name} is
+                      one of the developers of PlaymakersHub.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            ) : memberDetails?.is_admin ? (
+              <div className="bg-blue-50 border-l-4 border-blue-400 p-4 rounded-md shadow-md mb-6">
+                <div className="flex items-center">
+                  <div className="flex-shrink-0">
+                    <svg
+                      className="h-6 w-6 text-blue-400"
+                      xmlns="http://www.w3.org/2000/svg"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                      strokeWidth={2}
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        d="M13 16h-1v-4h-1m1-4h.01M12 19c-4.418 0-8-1.79-8-4V7a4 4 0 014-4h8a4 4 0 014 4v8c0 2.21-3.582 4-8 4z"
+                      />
+                    </svg>
+                  </div>
+                  <div className="ml-3">
+                    <h3 className="text-lg font-semibold text-blue-800">
+                      Jayvve Continedo
+                    </h3>
+                    <p className="mt-1 text-sm text-blue-700">
+                      Jayvve Continedo is the President of Playmakers. He plays
+                      a key role in managing the platform and ensuring its
+                      success.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            ) : null}
             <form>
-              <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700">
-                  Name
-                </label>
-                <input
-                  type="text"
-                  name="name"
-                  value={updatedProfile.name || ""}
-                  onChange={handleInputChange}
-                  className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3"
-                />
-              </div>
-              <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700">
-                  Bio
-                </label>
-                <textarea
-                  name="bio"
-                  value={updatedProfile.bio || ""}
-                  onChange={handleInputChange}
-                  className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3"
-                />
-              </div>
-              <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700">
-                  Profile Image
-                </label>
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={handleProfileImageChange}
-                  className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3"
-                />
-                {updatedProfile.profile_image && (
-                  <img
-                    src={updatedProfile.profile_image}
-                    alt="Profile Preview"
-                    className="w-16 h-16 rounded-full mt-2"
-                  />
-                )}
-              </div>
-              <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700">
-                  Mobile
-                </label>
-                <input
-                  type="text"
-                  name="mobile"
-                  value={updatedProfile.mobile || ""}
-                  onChange={handleInputChange}
-                  className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3"
-                />
-              </div>
-              <div>
-                <h4 className="font-semibold mb-2">Events Participated</h4>
-                {events.length > 0 ? (
-                  <>
-                    <Table>
-                      <TableHead>
-                        <TableRow>
-                          <TableCell>Event Name</TableCell>
-                          <TableCell>Start Date</TableCell>
-                          <TableCell>End Date</TableCell>
-                        </TableRow>
-                      </TableHead>
-                      <TableBody>
-                        {events
-                          .slice(
-                            page * rowsPerPage,
-                            page * rowsPerPage + rowsPerPage
-                          )
-                          .map((event) => {
-                            return (
-                              <TableRow key={event.event_id}>
-                                <TableCell>
-                                  {event.events?.event_title || "N/A"}
-                                </TableCell>
-                                <TableCell>
-                                  {new Date(
-                                    event.events?.start_date
-                                  ).toLocaleDateString()}
-                                </TableCell>
-                                <TableCell>
-                                  {new Date(
-                                    event.events?.end_date
-                                  ).toLocaleDateString()}
-                                </TableCell>
-                              </TableRow>
-                            );
-                          })}
-                      </TableBody>
-                    </Table>
-                    <TablePagination
-                      component="div"
-                      count={events.length}
-                      page={page}
-                      onPageChange={handleChangePage}
-                      rowsPerPage={rowsPerPage}
-                      onRowsPerPageChange={handleChangeRowsPerPage}
-                      rowsPerPageOptions={[5, 10, 15]}
+              {/* Admin Fields */}
+              {memberDetails?.is_admin || memberDetails?.is_super_admin ? (
+                <>
+                  <div className="mb-4">
+                    <label className="block text-sm font-medium text-gray-700">
+                      First Name
+                    </label>
+                    <input
+                      type="text"
+                      name="first_name"
+                      value={updatedProfile.first_name || ""}
+                      onChange={handleInputChange}
+                      className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3"
                     />
-                  </>
-                ) : (
-                  <Typography>No events participated yet.</Typography>
-                )}
-              </div>
+                  </div>
+                  <div className="mb-4">
+                    <label className="block text-sm font-medium text-gray-700">
+                      Last Name
+                    </label>
+                    <input
+                      type="text"
+                      name="last_name"
+                      value={updatedProfile.last_name || ""}
+                      onChange={handleInputChange}
+                      className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3"
+                    />
+                  </div>
+                </>
+              ) : (
+                <>
+                  {/* Member Fields */}
+                  <div className="mb-4">
+                    <label className="block text-sm font-medium text-gray-700">
+                      Name
+                    </label>
+                    <input
+                      type="text"
+                      name="name"
+                      value={updatedProfile.name || ""}
+                      onChange={handleInputChange}
+                      className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3"
+                    />
+                  </div>
+                  <div className="mb-4">
+                    <label className="block text-sm font-medium text-gray-700">
+                      Bio
+                    </label>
+                    <textarea
+                      name="bio"
+                      value={updatedProfile.bio || ""}
+                      onChange={handleInputChange}
+                      className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3"
+                    />
+                  </div>
+                  <div className="mb-4">
+                    <label className="block text-sm font-medium text-gray-700">
+                      Profile Image
+                    </label>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleProfileImageChange}
+                      className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3"
+                    />
+                    {updatedProfile.profile_image && (
+                      <img
+                        src={updatedProfile.profile_image}
+                        alt="Profile Preview"
+                        className="w-16 h-16 rounded-full mt-2"
+                      />
+                    )}
+                  </div>
+                  <div className="mb-4">
+                    <label className="block text-sm font-medium text-gray-700">
+                      Mobile
+                    </label>
+                    <input
+                      type="text"
+                      name="mobile"
+                      value={updatedProfile.mobile || ""}
+                      onChange={handleInputChange}
+                      className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3"
+                    />
+                  </div>
+                </>
+              )}
+              {memberDetails?.is_admin || memberDetails.is_super_admin ? (
+                <div className="mt-6 mb-5">
+                  <div className="bg-blue-50 border-l-4 border-blue-400 p-4 rounded-md shadow-md">
+                    <div className="flex items-start">
+                      <div className="flex-shrink-0">
+                        <svg
+                          className="h-6 w-6 text-blue-400"
+                          xmlns="http://www.w3.org/2000/svg"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                          strokeWidth={2}
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            d="M13 16h-1v-4h-1m1-4h.01M12 19c-4.418 0-8-1.79-8-4V7a4 4 0 014-4h8a4 4 0 014 4v8c0 2.21-3.582 4-8 4z"
+                          />
+                        </svg>
+                      </div>
+                      <div className="ml-3">
+                        <h3 className="text-lg font-semibold text-blue-800">
+                          Admin Notes
+                        </h3>
+                        <p className="mt-2 text-sm text-blue-700">
+                          As a playmakers admin or developer, you cannot:
+                        </p>
+                        <ul className="mt-2 text-sm text-blue-700 list-disc list-inside space-y-1">
+                          <li>Participate in events.</li>
+                          <li>Have a status badge like members.</li>
+                        </ul>
+                        {/* <p className="mt-2 text-sm text-blue-700">
+                          These restrictions ensure that admin roles remain
+                          focused on managing the platform effectively.
+                        </p> */}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div>
+                  <h4 className="font-semibold mb-2">Events Participated</h4>
+                  {events.length > 0 ? (
+                    <>
+                      <Table>
+                        <TableHead>
+                          <TableRow>
+                            <TableCell>Event Name</TableCell>
+                            <TableCell>Start Date</TableCell>
+                            <TableCell>End Date</TableCell>
+                          </TableRow>
+                        </TableHead>
+                        <TableBody>
+                          {events
+                            .slice(
+                              page * rowsPerPage,
+                              page * rowsPerPage + rowsPerPage
+                            )
+                            .map((event) => {
+                              return (
+                                <TableRow key={event.event_id}>
+                                  <TableCell>
+                                    {event.events?.event_title || "N/A"}
+                                  </TableCell>
+                                  <TableCell>
+                                    {new Date(
+                                      event.events?.start_date
+                                    ).toLocaleDateString()}
+                                  </TableCell>
+                                  <TableCell>
+                                    {new Date(
+                                      event.events?.end_date
+                                    ).toLocaleDateString()}
+                                  </TableCell>
+                                </TableRow>
+                              );
+                            })}
+                        </TableBody>
+                      </Table>
+                      <TablePagination
+                        component="div"
+                        count={events.length}
+                        page={page}
+                        onPageChange={handleChangePage}
+                        rowsPerPage={rowsPerPage}
+                        onRowsPerPageChange={handleChangeRowsPerPage}
+                        rowsPerPageOptions={[5, 10, 15]}
+                      />
+                    </>
+                  ) : (
+                    <Typography>No events participated yet.</Typography>
+                  )}
+                </div>
+              )}
               <div className="flex justify-end space-x-2">
                 <button
                   type="button"

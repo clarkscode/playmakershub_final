@@ -1,5 +1,8 @@
 import { useEffect, useState } from "react";
-import { FaCheckCircle, FaPen, FaTrash } from "react-icons/fa";
+import { FaCheckCircle, FaPen, FaTrash, FaBell } from "react-icons/fa";
+import sendEmail from "../../database/sendEmail";
+import { toast, ToastContainer } from "react-toastify";
+import { supabase } from "../../database/supabase";
 
 const MemberDetailsModal = ({ member, onClose, onUpdate, onDelete }) => {
   const [isEditing, setIsEditing] = useState(false);
@@ -69,6 +72,55 @@ const MemberDetailsModal = ({ member, onClose, onUpdate, onDelete }) => {
     }
   };
 
+  const handleRemind = async () => {
+    if (member.status === "inactive" || member.status === "probationary") {
+      const reminderMessage = {
+        email: member.email,
+        message: "You must participate in events to remain active.",
+      };
+
+      console.log("Reminder message", reminderMessage);
+      try {
+        // Send email
+        const emailResponse = await sendEmail(
+          reminderMessage.email,
+          "Action Required: Event Participation",
+          reminderMessage.message
+        );
+
+        if (emailResponse.error) {
+          console.error("Error sending reminder email:", emailResponse.error);
+          toast.error("Failed to send reminder email.");
+          return;
+        }
+        toast.success("Reminder email sent successfully.");
+
+        // Insert into notifications table
+        const { error: notificationError } = await supabase
+          .from("notifications")
+          .insert({
+            notification_type: "reminder",
+            user_id: member.id, // Assuming `member.id` maps to `user_id`
+            content: reminderMessage.message,
+            sent_at: new Date(),
+          });
+
+        if (notificationError) {
+          console.error(
+            "Error inserting notification into database:",
+            notificationError
+          );
+          toast.error("Failed to log reminder notification.");
+          return;
+        }
+        toast.success("Reminder notification logged successfully.");
+      } catch (error) {
+        console.error("Error in handleRemind:", error);
+        toast.error("An error occurred while sending the reminder.");
+      }
+    }
+  };
+
   if (!member) return null;
 
   return (
@@ -77,6 +129,7 @@ const MemberDetailsModal = ({ member, onClose, onUpdate, onDelete }) => {
       id="modal-overlay"
       onClick={handleClickOutside}
     >
+      <ToastContainer />
       <div className="bg-white rounded-lg w-full max-w-2xl">
         {/* Header Section */}
         <div className="bg-gradient-to-r from-[#C2396C] to-[#5C1B33] px-5 py-5 rounded-t-lg text-white relative">
@@ -171,6 +224,14 @@ const MemberDetailsModal = ({ member, onClose, onUpdate, onDelete }) => {
                 >
                   <FaTrash className="text-[#FB4B4E]" />
                 </button>
+                {["inactive", "probationary"].includes(member.status) && (
+                  <button
+                    className="bg-[#5C1B33] py-2 px-4 rounded-full hover:bg-[#9c2953]"
+                    onClick={handleRemind}
+                  >
+                    <FaBell className="text-yellow-400" />
+                  </button>
+                )}
               </>
             )}
           </div>
@@ -229,6 +290,21 @@ const MemberDetailsModal = ({ member, onClose, onUpdate, onDelete }) => {
                 />
               ) : (
                 <p>{member.totalParticipation}</p>
+              )}
+            </div>
+            <div>
+              <p className="font-semibold text-sm">Total Events Backouts:</p>
+              {isEditing ? (
+                <input
+                  disabled
+                  type="number"
+                  name="backouts"
+                  value={editableMember.totalBackouts}
+                  onChange={handleInputChange}
+                  className="bg-white text-gray-900 border rounded-md px-2 py-1 w-full"
+                />
+              ) : (
+                <p>{member.totalBackouts}</p>
               )}
             </div>
             <div>

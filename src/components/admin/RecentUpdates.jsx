@@ -33,7 +33,9 @@ export const RecentUpdates = () => {
   return (
     <div className="animate__animated animate__fadeIn">
       {loading ? (
-        <div className="text-center text-gray-500 py-4">Loading updates...</div>
+        <div className="flex items-center justify-center h-screen">
+          <div className="w-16 h-16 border-4 border-t-transparent border-[#5C1B33] rounded-full animate-spin"></div>
+        </div>
       ) : updates.length > 0 ? (
         <table className="min-w-full bg-white">
           <thead>
@@ -57,7 +59,7 @@ export const RecentUpdates = () => {
         </table>
       ) : (
         <div className="text-center text-gray-500 py-4">
-          No recent updates found.
+          No recent updates found
         </div>
       )}
     </div>

@@ -38,6 +38,7 @@ const MemberOrganization = () => {
   const [genres, setGenres] = useState([]);
   const [selectedMember, setSelectedMember] = useState(null);
   const [filter, setFilter] = useState("all");
+  const [searchQuery, setSearchQuery] = useState("");
 
   // Pagination states
   const [currentPage, setCurrentPage] = useState(1);
@@ -53,16 +54,7 @@ const MemberOrganization = () => {
   const loadMembers = async () => {
     try {
       setLoading(true); // Start loading
-      /*
-      const data = await fetchMembers();
-      const list = data?.map((v) => ({
-        ...v,
-        genre: JSON.parse(v.genre || []),
-        role: JSON.parse(v.role || []),
-      }));
-       if (list) {
-        setMembers(list);
-      } */
+
       const data = await fetchMembers();
       const parsedMembers = data?.map((v) => ({
         ...v,
@@ -84,9 +76,27 @@ const MemberOrganization = () => {
     loadMembers();
   }, []);
 
+  /*  
+  OLD CODE - JIECLARKDEV
+
   const filteredMembers = members.filter((member) => {
     if (filter === "all") return true;
     return member.status === filter;
+  }); */
+
+  // Filter members based on status and search query
+  const filteredMembers = members.filter((member) => {
+    if (filter !== "all" && member.status !== filter) {
+      return false;
+    }
+    if (
+      searchQuery &&
+      !member.name.toLowerCase().includes(searchQuery.toLowerCase())
+    ) {
+      return false;
+    }
+
+    return true;
   });
 
   // Calculate paginated members
@@ -112,6 +122,11 @@ const MemberOrganization = () => {
     setIsModalOpen(false);
     setIsDetailsModalOpen(false);
     setSelectedMember(null);
+  };
+
+  const handleSearchChange = (e) => {
+    setSearchQuery(e.target.value); // Update the search query state
+    setCurrentPage(1); // Reset to page 1 when search query changes
   };
 
   const handleSubmit = async () => {
@@ -287,6 +302,17 @@ const MemberOrganization = () => {
           >
             Create Member
           </button>
+        </div>
+
+        {/* Search Input */}
+        <div className="px-8 py-4">
+          <input
+            type="text"
+            placeholder="Search Members by Name"
+            className="w-full p-2 border border-gray-300 rounded-lg"
+            value={searchQuery}
+            onChange={handleSearchChange}
+          />
         </div>
 
         {/* Loading Indicator */}

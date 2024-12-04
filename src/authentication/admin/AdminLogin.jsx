@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { fetchUserType, supabase } from "../../database/supabase";
+import { supabase } from "../../database/supabase";
 import { playmakersLogo } from "../../assets";
 
 const AdminLogin = () => {
@@ -34,37 +34,42 @@ const AdminLogin = () => {
 
     setLoading(false);
     if (error) {
-      setError("Invalid login credentials.");
+      // setError("Invalid login credentials.");
+      setError("email or password is incorrect");
       return;
     }
 
     // Check if the use is logged-in and the user is an admin
     if (user && session) {
       try {
-        const { data: userDetails, error: userError } = await supabase
-          .from("users")
-          .select("first_name, last_name, user_type")
-          .eq("id", user.id)
-          .single();
+        // Access `user_metadata` directly from the user object
+        const userMetaData = user?.user_metadata || {};
+        const isSuperAdmin = userMetaData.is_super_admin === true;
+        const isAdmin = userMetaData.is_admin === true;
 
-        if (userError || !userDetails) {
-          setError("Failed to fetch user details.");
+        console.log("isAdmin:", isAdmin);
+        console.log("isSuperAdmin:", isSuperAdmin);
+        console.log("User Metadata:", userMetaData);
+
+        // Deny access if neither admin nor super admin
+        if (!isAdmin && !isSuperAdmin) {
+          setError(
+            "Access denied: You do not have admin or super admin privileges."
+          );
           return;
         }
 
-        // Fetch user_type from the database
-        const userType = await fetchUserType(user.id);
+        // Construct the admin or super-admin's name
+        const adminName = `${userMetaData.first_name || ""} ${
+          userMetaData.last_name || ""
+        }`.trim();
+        console.log("Admin Name:", adminName);
+        console.log("session access_token", session.access_token);
 
-        // Check if user_type is admin or superadmin
-        if (userType !== "admin" && userType !== "superadmin") {
-          setError("Access denied: You do not have admin privileges.");
-          return;
-        }
-        const adminName = `${userDetails.first_name} ${userDetails.last_name}`;
-
-        // Save the token based on rememberMe choice
+        // Save tokens and admin name
         const tokenStorage = rememberMe ? localStorage : sessionStorage;
         tokenStorage.setItem("adminAuthToken", session.access_token);
+        tokenStorage.setItem("adminRefreshToken", session.refresh_token);
         tokenStorage.setItem("adminName", adminName);
 
         navigate("/admin/dashboard");

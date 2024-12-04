@@ -1,6 +1,6 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 import { useEffect, useState } from "react";
-import { Bar, Line, Pie } from "react-chartjs-2";
+import { Bar, Line, Doughnut } from "react-chartjs-2";
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -12,10 +12,12 @@ import {
   Title,
   Tooltip,
   Legend,
+  RadialLinearScale,
 } from "chart.js";
 import { supabase } from "../../../database/supabase";
 import Sidebar from "../../../components/admin/Sidebar";
 import Header from "../../../components/admin/Header";
+import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 
 ChartJS.register(
   CategoryScale,
@@ -26,7 +28,8 @@ ChartJS.register(
   LineElement,
   Title,
   Tooltip,
-  Legend
+  Legend,
+  RadialLinearScale
 );
 
 const EventStatistics = () => {
@@ -45,9 +48,16 @@ const EventStatistics = () => {
     const fetchEventData = async () => {
       setIsLoading(true);
       try {
-        const { data: events, error: eventError } = await supabase
-          .from("events")
-          .select("*");
+        const { data: events, error: eventError } = await supabase.from(
+          "events"
+        ).select(`
+          *,
+          bookings (event_type)
+        `);
+        /* 
+        join ang events and bookings table para makuha ang event_type
+        */
+
         const { data: participants, error: participantsError } = await supabase
           .from("participation")
           .select("*");
@@ -114,10 +124,11 @@ const EventStatistics = () => {
   // Helper function: Process Event Distribution for Pie Chart
   const processEventDistributionData = (events) => {
     const departmentEvents = events.filter(
-      (event) => event.event_type === "department"
+      (event) => event.bookings?.event_type === "Department"
     ).length;
+
     const organizationEvents = events.filter(
-      (event) => event.event_type === "organization"
+      (event) => event.bookings?.event_type === "Organization"
     ).length;
 
     setEventDistributionData({
@@ -128,6 +139,7 @@ const EventStatistics = () => {
           data: [departmentEvents, organizationEvents],
           backgroundColor: ["#FF6384", "#36A2EB"],
           borderColor: ["#FF6384", "#36A2EB"],
+          borderWidth: 1,
         },
       ],
     });
@@ -210,13 +222,43 @@ const EventStatistics = () => {
           <div className="p-6 grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Monthly Event Distribution Chart */}
             <ChartContainer title="Monthly Event Distribution Chart">
-              <Bar data={chartData} />
+              <div>
+                {/* Bar Chart */}
+                <Bar data={chartData} />
+                {/* Year with Icon */}
+                <div className="flex justify-center items-center mt-4">
+                  {/* MUI Icon */}
+                  <CheckCircleIcon
+                    style={{ color: "#7B1D3F", fontSize: "16px" }}
+                    className="mr-2"
+                  />
+                  {/* Year Text */}
+                  <p className="text-gray-700 text-lg">
+                    <span className="font-medium">Year</span>{" "}
+                    <span className="text-[#7B1D3F] font-bold">
+                      {new Date().getFullYear()}
+                    </span>
+                  </p>
+                </div>
+              </div>
             </ChartContainer>
 
             {/* Event Distribution Pie Chart */}
-            <ChartContainer title="Event Statistics">
-              <Pie data={eventDistributionData} />
-            </ChartContainer>
+            <div className=" w-full max-w-[400px] ">
+              <ChartContainer title="Event Statistics">
+                {eventDistributionData ? (
+                  <Doughnut
+                    data={eventDistributionData}
+                    key={JSON.stringify(eventDistributionData)}
+                    options={{
+                      responsive: true, // Keep it responsive
+                    }}
+                  />
+                ) : (
+                  <p>No data available for the chart</p>
+                )}
+              </ChartContainer>
+            </div>
 
             {/* Participants per Event */}
             <ChartContainer title="Participants per Event">

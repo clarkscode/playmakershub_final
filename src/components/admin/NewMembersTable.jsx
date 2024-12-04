@@ -31,8 +31,19 @@ export const NewMembersTable = () => {
   }, []);
 
   if (loading) {
-    return <div className="text-center py-4">Loading members...</div>;
+    <div className="flex items-center justify-center h-screen">
+      <div className="w-16 h-16 border-4 border-t-transparent border-[#5C1B33] rounded-full animate-spin"></div>
+    </div>;
   }
+
+  if (members.length === 0) {
+    return (
+      <div className="text-center text-gray-500 py-4">
+        No new joined members found
+      </div>
+    );
+  }
+
   return (
     <table className="min-w-full bg-white rounded-lg animate__animated animate__fadeIn">
       <thead className="bg-[#EFFBEF]">

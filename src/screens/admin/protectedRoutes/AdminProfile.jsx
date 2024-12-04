@@ -4,7 +4,7 @@ import "react-toastify/dist/ReactToastify.css";
 import Sidebar from "../../../components/admin/Sidebar";
 import Header from "../../../components/admin/Header";
 import { supabase } from "../../../database/supabase";
-
+import { useNavigate } from "react-router-dom";
 const AdminProfile = () => {
   const [adminData, setAdminData] = useState(null);
   const [joinStatus, setJoinStatus] = useState(null);
@@ -13,31 +13,47 @@ const AdminProfile = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [saving, setSaving] = useState(false); // For save button loading
 
+  const navigate = useNavigate();
   const fetchAdminData = async () => {
     try {
       setLoading(true);
 
-      // Fetch the authenticated user
+      // // Get the token from localStorage
+      // const adminAuthToken = localStorage.getItem("adminAuthToken");
+      // if (!adminAuthToken) throw new Error("Authentication token is missing.");
+
+      // // Restore session using the token
+      // const { data: session, error: sessionError } =
+      //   await supabase.auth.setSession({
+      //     access_token: adminAuthToken,
+      //     refresh_token: localStorage.getItem("adminRefreshToken"),
+      //     // Save refresh token during login
+      //   });
+
+      // if (sessionError) throw new Error(sessionError.message);
+
+      // const { user } = session;
+      // if (!user) throw new Error("No authenticated user found.");
+
+      // Get the current authenticated user
       const {
         data: { user },
-        error: authError,
+        error: userError,
       } = await supabase.auth.getUser();
 
-      if (authError) throw new Error(authError.message);
-
+      if (userError) throw new Error(userError.message);
       if (!user) throw new Error("No authenticated user found.");
 
-      // Fetch admin profile
-      const { data, error: userError } = await supabase
-        .from("users")
-        .select("*")
-        .eq("id", user.id)
-        .single();
-
-      if (userError) throw new Error(userError.message);
-
-      setAdminData(data);
-
+      // Access user_metadata directly
+      const userMetaData = user.user_metadata || {};
+      // console.log("user meta data in profile", user.user_metadata);
+      const adminData = {
+        first_name: userMetaData.first_name || "",
+        last_name: userMetaData.last_name || "",
+        email: user.email || "",
+        role: userMetaData.role || "",
+      };
+      setAdminData(adminData);
       // Fetch join table data
       const { data: joinData, error: joinError } = await supabase
         .from("join")
@@ -50,6 +66,7 @@ const AdminProfile = () => {
       setJoinStatus(joinData.isOpen);
     } catch (err) {
       setError(err.message);
+      console.log("admin profile error", error);
       toast.error(err.message);
     } finally {
       setLoading(false);
@@ -64,7 +81,8 @@ const AdminProfile = () => {
         .from("join")
         .update({
           isOpen: updatedStatus,
-          updatedBy: `${adminData.first_name} ${adminData.last_name}`, // Use admin name
+          updatedBy: `${adminData.first_name} ${adminData.last_name}`,
+          // Use admin name
         })
         .eq("id", 1);
 
@@ -93,13 +111,20 @@ const AdminProfile = () => {
     try {
       setSaving(true);
 
-      const { error: updateError } = await supabase
-        .from("users")
-        .update(adminData)
-        .eq("id", adminData.id);
+      // Update the user's metadata using supabase.auth.updateUser
+      const updates = {
+        data: {
+          first_name: adminData.first_name,
+          last_name: adminData.last_name,
+          role: adminData.role,
+        },
+      };
+
+      const { error: updateError } = await supabase.auth.updateUser(updates);
 
       if (updateError) throw new Error(updateError.message);
-      const adminName = localStorage.getItem("adminName") || "Admin";
+
+      const adminName = `${adminData.first_name} ${adminData.last_name}`;
 
       // Insert into the `updates` table
       const updateLog = {
@@ -123,8 +148,28 @@ const AdminProfile = () => {
     }
   };
 
+  const refreshSession = async () => {
+    try {
+      const { data, error } = await supabase.auth.refreshSession();
+      if (error) {
+        console.error("Failed to refresh session:", error);
+        throw error;
+      }
+
+      // Update tokens in localStorage
+      const { session } = data;
+      localStorage.setItem("adminAuthToken", session.access_token);
+      localStorage.setItem("adminRefreshToken", session.refresh_token);
+    } catch (err) {
+      console.error("Error refreshing session:", err.message);
+      toast.error("Session expired. Please log in again.");
+      navigate("/admin/login");
+    }
+  };
+
   useEffect(() => {
     fetchAdminData();
+    refreshSession();
   }, []);
 
   if (error) {
@@ -195,15 +240,14 @@ const AdminProfile = () => {
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700">
-                    Mobile Number
+                    Role
                   </label>
                   <input
                     type="text"
-                    name="mobile_number"
-                    value={adminData.mobile_number || ""}
-                    onChange={handleInputChange}
-                    disabled={!isEditing}
-                    className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3"
+                    name="role"
+                    value={adminData.role || ""}
+                    disabled
+                    className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 bg-gray-100 cursor-not-allowed"
                   />
                 </div>
               </div>
