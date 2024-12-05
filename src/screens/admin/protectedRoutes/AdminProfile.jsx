@@ -147,23 +147,56 @@ const AdminProfile = () => {
       setSaving(false);
     }
   };
+  // // old code refresh session
+  // const refreshSession = async () => {
+  //   try {
+  //     const { data, error } = await supabase.auth.refreshSession();
+  //     if (error) {
+  //       console.error("Failed to refresh session:", error);
+  //       throw error;
+  //     }
+
+  //     // Update tokens in localStorage
+  //     const { session } = data;
+  //     localStorage.setItem("adminAuthToken", session.access_token);
+  //     localStorage.setItem("adminRefreshToken", session.refresh_token);
+  //   } catch (err) {
+  //     console.error("Error refreshing session:", err.message);
+  //     toast.error("Session expired. Please log in again.");
+  //     const { error } = await supabase.auth.signOut();
+  //     if (error) {
+  //       console.log(error);
+  //     } else {
+  //       navigate("/adminonly");
+  //     }
+  //   }
+  // };
 
   const refreshSession = async () => {
     try {
       const { data, error } = await supabase.auth.refreshSession();
-      if (error) {
-        console.error("Failed to refresh session:", error);
-        throw error;
+
+      if (error || !data.session) {
+        console.error(
+          "Session refresh failed:",
+          error?.message || "No session"
+        );
+        throw new Error("Session expired. Please log in again.");
       }
 
-      // Update tokens in localStorage
       const { session } = data;
+      // Save new tokens to localStorage
       localStorage.setItem("adminAuthToken", session.access_token);
       localStorage.setItem("adminRefreshToken", session.refresh_token);
+
+      return session; // Return the refreshed session
     } catch (err) {
       console.error("Error refreshing session:", err.message);
-      toast.error("Session expired. Please log in again.");
-      navigate("/adminonly");
+      toast.error("Session expired. Redirecting to login...");
+      await supabase.auth.signOut();
+      localStorage.removeItem("adminAuthToken");
+      localStorage.removeItem("adminRefreshToken");
+      navigate("/adminonly"); // Redirect to login page
     }
   };
 
