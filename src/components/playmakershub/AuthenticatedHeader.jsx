@@ -561,6 +561,16 @@ const AuthenticatedHeader = () => {
                 <>
                   {/* Member Fields */}
                   <div className="mb-4">
+                    {/* Member Role ( Removes quotes and brackets ) */}
+                    <div className="bg-[#5C1B33] px-2 py-2 mb-5">
+                      <p className="text-sm font-medium text-white/90">
+                        Roles:{" "}
+                        {memberDetails.role
+                          .split(",")
+                          .map((r) => r.trim().replace(/['"[\]]/g, ""))
+                          .join(" and ")}
+                      </p>
+                    </div>
                     <label className="block text-sm font-medium text-gray-700">
                       Name
                     </label>
