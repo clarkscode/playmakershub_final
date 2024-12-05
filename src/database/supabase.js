@@ -1,4 +1,5 @@
 import { createClient } from "@supabase/supabase-js";
+import sendEmail from "./sendEmail";
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseKey = import.meta.env.VITE_SUPABASE_KEY;
@@ -78,11 +79,32 @@ export const createBookingProcess = async (formData) => {
 
 export const adminCreateEventProcess = async (formData, adminName) => {
   try {
-    // Step 1: Insert into events table
+    // Step 1: Insert the booking into the bookings table
+    const { data: bookingData, error: bookingError } = await supabase
+      .from("bookings")
+      .insert([
+        {
+          organizer_first_name: formData.firstName,
+          organizer_last_name: formData.lastName,
+          organizer_email: formData.email,
+          event_location: formData.location,
+          event_type: formData.eventType,
+          event_type_name: formData.eventTypeName,
+          date_created: new Date(),
+        },
+      ])
+      .select();
+
+    if (bookingError) throw bookingError;
+
+    const bookingId = bookingData[0]?.booking_id;
+
+    // Step 2: Insert the event into the events table
     const { data: eventData, error: eventError } = await supabase
       .from("events")
       .insert([
         {
+          booking_id: bookingId,
           event_title: formData.title,
           start_date: formData.startDate,
           end_date: formData.endDate,
@@ -91,13 +113,7 @@ export const adminCreateEventProcess = async (formData, adminName) => {
           genre: formData.genre,
           theme: formData.theme,
           description: formData.description,
-          event_status: "Accepted", // Directly accepted
-          event_type: formData.eventType,
-          event_type_name: formData.eventTypeName,
-          organizer_first_name: formData.firstName,
-          organizer_last_name: formData.lastName,
-          organizer_email: formData.email,
-          event_location: formData.location,
+          event_status: "Accepted", // Directly accepted by admin
           date_created: new Date(),
         },
       ])
@@ -105,52 +121,56 @@ export const adminCreateEventProcess = async (formData, adminName) => {
 
     if (eventError) throw eventError;
 
-    const eventId = eventData[0]?.id;
+    const eventId = eventData[0]?.event_id;
 
-    // Step 2: Log the creation into updates table
-    const logMessage = `Playmakers admin ${adminName} created an event.`;
-    const { error: logError } = await supabase
-      .from("updates")
+    // Step 3: Insert the musician requirements into the musicians_required table
+    const { data: musicianData, error: musicianError } = await supabase
+      .from("musicians_required")
       .insert([
-        { event_id: eventId, message: logMessage, date_created: new Date() },
-      ]);
+        {
+          event_id: eventId,
+          guitarist: formData.guitarist,
+          vocalist: formData.vocalist,
+          bassist: formData.bassist,
+          keyboardist: formData.keyboardist,
+          percussionist: formData.percussionist,
+        },
+      ])
+      .select();
 
-    if (logError) throw logError;
+    if (musicianError) throw musicianError;
 
-    // Step 3: Notify the organizer
+    // Step 4: Log the creation into the updates table
+    const { error: updateLogError } = await supabase.from("updates").insert([
+      {
+        update_type: "Added new events",
+        updated_by: adminName,
+        date_time: new Date().toISOString(),
+      },
+    ]);
+
+    if (updateLogError) throw updateLogError;
+
+    // Step 5: Notify the organizer using sendEmail
     const emailSubject = "Event Created Successfully!";
     const emailBody = `
-      Hello ${formData.firstName} ${formData.lastName},<br/><br/>
-      Your event titled <b>${formData.title}</b> has been created successfully by the Playmakers admin.<br/><br/>
-      Here are the event details:<br/>
-      <ul>
-        <li><b>Start Date:</b> ${formData.startDate}</li>
-        <li><b>End Date:</b> ${formData.endDate}</li>
-        <li><b>Start Time:</b> ${formData.startTime}</li>
-        <li><b>End Time:</b> ${formData.endTime}</li>
-        <li><b>Location:</b> ${formData.location}</li>
-      </ul><br/>
-      Thank you for using Playmakers!<br/><br/>
-      Best regards,<br/>
-      The Playmakers Team
+      Dear Organizer,
+      <p>Your booking for the event titled "${formData.title}" has been successfully created!</p>
+      <p>Here is your booking ID: <strong>${bookingId}</strong></p>
+      <p>Please remember to keep this booking ID safe. You will need it if you want to make clarifications, updates, or cancellations for your booking.</p>
+      <p>Best Regards,<br/>The Playmakers Family</p>
     `;
 
-    const { error: emailError } = await supabase.functions.invoke(
-      "send-email",
-      {
-        body: JSON.stringify({
-          to: formData.email,
-          subject: emailSubject,
-          html: emailBody,
-        }),
-      }
+    const emailResult = await sendEmail(
+      formData.email,
+      emailSubject,
+      emailBody
     );
+    if (emailResult instanceof Error) throw emailResult;
 
-    if (emailError) throw emailError;
-
-    return { eventData };
+    return { bookingData, eventData, musicianData };
   } catch (error) {
-    console.error("Error in createEventProcess:", error);
+    console.error("Error in adminCreateEventProcess:", error);
     throw error;
   }
 };

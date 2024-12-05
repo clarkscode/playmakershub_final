@@ -1,8 +1,9 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import ReCAPTCHA from "react-google-recaptcha";
 import { toast } from "react-toastify";
+import { adminCreateEventProcess, supabase } from "../../../database/supabase";
 
-const CreateEventModal = ({ isOpen, onClose, adminName }) => {
+const CreateEventModal = ({ isOpen, onClose }) => {
   const [formData, setFormData] = useState({
     firstName: "Jie clark",
     lastName: "Terec",
@@ -29,6 +30,43 @@ const CreateEventModal = ({ isOpen, onClose, adminName }) => {
 
   const [captchaVerified, setCaptchaVerified] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [errors, setErrors] = useState({
+    startTime: "",
+    endTime: "",
+  });
+  const [adminName, setAdminName] = useState(null);
+
+  const today = new Date().toISOString().split("T")[0];
+
+  // Fetch adminName from Supabase Auth when the component mounts
+  useEffect(() => {
+    const fetchAdminName = async () => {
+      try {
+        const {
+          data: { user },
+          error: userError,
+        } = await supabase.auth.getUser();
+
+        if (userError) throw new Error(userError.message);
+        if (!user) throw new Error("No authenticated user found.");
+
+        // Extract admin name from user_metadata
+        const userMetaData = user.user_metadata || {};
+        const adminData = {
+          first_name: userMetaData.first_name || "",
+          last_name: userMetaData.last_name || "",
+        };
+        const fetchedAdminName = `${adminData.first_name} ${adminData.last_name}`;
+
+        setAdminName(fetchedAdminName);
+      } catch (error) {
+        console.error("Error fetching admin name:", error);
+        toast.error("Failed to fetch admin information.");
+      }
+    };
+
+    fetchAdminName();
+  }, []);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -48,6 +86,39 @@ const CreateEventModal = ({ isOpen, onClose, adminName }) => {
       ...prev,
       [name]: newValue,
     }));
+
+    if ((name === "startTime" || name === "endTime") && formData.startDate) {
+      const now = new Date();
+      const [hours, minutes] = value.split(":").map(Number);
+      const selectedTime = new Date();
+      selectedTime.setHours(hours, minutes, 0, 0);
+
+      const updatedErrors = { ...errors };
+
+      if (
+        formData.startDate === now.toISOString().split("T")[0] &&
+        selectedTime < now
+      ) {
+        const currentTime = now.toLocaleTimeString([], {
+          hour: "2-digit",
+          minute: "2-digit",
+        });
+        updatedErrors[
+          name
+        ] = `You selected a past time. Please select a time after ${currentTime}.`;
+      } else if (
+        name === "endTime" &&
+        new Date(`${formData.startDate}T${formData.startTime}`) >=
+          new Date(`${formData.endDate}T${value}`)
+      ) {
+        updatedErrors.endTime =
+          "The end time must be later than the start time. Please adjust your selection.";
+      } else {
+        updatedErrors[name] = ""; // Clear error if valid
+      }
+
+      setErrors(updatedErrors);
+    }
   };
 
   const handleCaptchaVerify = () => {
@@ -68,6 +139,16 @@ const CreateEventModal = ({ isOpen, onClose, adminName }) => {
       location,
     } = formData;
 
+    // Current date and time
+
+    const now = new Date();
+    const currentDateString = now.toISOString().split("T")[0];
+    const updatedErrors = {};
+    const currentTime = now.toLocaleTimeString([], {
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+
     if (
       !firstName ||
       !lastName ||
@@ -84,17 +165,49 @@ const CreateEventModal = ({ isOpen, onClose, adminName }) => {
       return false;
     }
 
-    if (!email.endsWith("@ustp.edu.ph")) {
-      toast.error("Only @ustp.edu.ph email addresses are allowed.");
-      return false;
-    }
+    // if (!email.endsWith("@ustp.edu.ph")) {
+    //   toast.error("Only @ustp.edu.ph email addresses are allowed.");
+    //   return false;
+    // }
 
     if (!captchaVerified) {
       toast.error("Please verify the CAPTCHA.");
       return false;
     }
 
-    return true;
+    if (formData.startDate === currentDateString) {
+      const [startHours, startMinutes] = formData.startTime
+        .split(":")
+        .map(Number);
+      const startTimeDate = new Date();
+      startTimeDate.setHours(startHours, startMinutes, 0, 0);
+
+      if (startTimeDate < now) {
+        updatedErrors.startTime = `You selected a past time. Please select a time after ${currentTime}.`;
+      }
+    }
+
+    if (formData.endDate === currentDateString) {
+      const [endHours, endMinutes] = formData.endTime.split(":").map(Number);
+      const endTimeDate = new Date();
+      endTimeDate.setHours(endHours, endMinutes, 0, 0);
+
+      if (endTimeDate < now) {
+        updatedErrors.endTime = `You selected a past time. Please select a time after ${currentTime}.`;
+      }
+    }
+
+    if (
+      new Date(`${formData.startDate}T${formData.startTime}`) >
+      new Date(`${formData.endDate}T${formData.endTime}`)
+    ) {
+      updatedErrors.endTime =
+        "The end time must be later than the start time. Please adjust your selection.";
+    }
+
+    setErrors(updatedErrors);
+
+    return Object.keys(updatedErrors).length === 0; // Return true if no errors
   };
 
   const handleSubmit = async (e) => {
@@ -102,12 +215,25 @@ const CreateEventModal = ({ isOpen, onClose, adminName }) => {
     if (!validateForm()) return;
 
     setLoading(true);
+
     try {
-      // await adminCreateEventProcess(formData, adminName);
-      console.log(formData);
+      // Ensure adminName is available
+      if (!adminName) {
+        toast.error("Admin name not available. Please try again.");
+        setLoading(false);
+        return;
+      }
+      const { bookingData, eventData, musicianData } =
+        await adminCreateEventProcess(formData, adminName);
+      console.log(adminName);
+      console.log("booking data", bookingData);
+      console.log("event data", eventData);
+      console.log("musicians data", musicianData);
+
       toast.success("Event created successfully!");
-      onClose(); // Close modal after successful submission
+      onClose(); // Close the modal
     } catch (error) {
+      console.error("Error creating event:", error);
       toast.error("An error occurred while creating the event.");
     } finally {
       setLoading(false);
@@ -233,6 +359,7 @@ const CreateEventModal = ({ isOpen, onClose, adminName }) => {
               <input
                 type="date"
                 name="startDate"
+                min={today}
                 value={formData.startDate}
                 onChange={handleChange}
                 className="w-full border border-gray-300 rounded-lg p-2 mt-1"
@@ -253,6 +380,7 @@ const CreateEventModal = ({ isOpen, onClose, adminName }) => {
               />
             </div>
           </div>
+          {/* start time and end time  */}
           <div className="flex space-x-4 mb-4">
             <div className="w-1/2">
               <label className="block text-sm font-medium text-gray-700">
@@ -266,6 +394,9 @@ const CreateEventModal = ({ isOpen, onClose, adminName }) => {
                 className="w-full border border-gray-300 rounded-lg p-2 mt-1"
                 required
               />
+              {errors.startTime && (
+                <p className="text-sm text-red-600 mt-1">{errors.startTime}</p>
+              )}
             </div>
             <div className="w-1/2">
               <label className="block text-sm font-medium text-gray-700">
@@ -279,6 +410,9 @@ const CreateEventModal = ({ isOpen, onClose, adminName }) => {
                 className="w-full border border-gray-300 rounded-lg p-2 mt-1"
                 required
               />
+              {errors.endTime && (
+                <p className="text-sm text-red-600 mt-1">{errors.endTime}</p>
+              )}
             </div>
           </div>
 

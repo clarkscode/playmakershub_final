@@ -9,7 +9,7 @@ const MemberDetailsModal = ({ member, onClose, onUpdate, onDelete }) => {
   const [editableMember, setEditableMember] = useState({ ...member });
 
   useEffect(() => {
-    console.log("editable members data", editableMember);
+    // console.log("editable members data", editableMember);
     const handleEsc = (event) => {
       if (event.key === "Escape") {
         onClose();

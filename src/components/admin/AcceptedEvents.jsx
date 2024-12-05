@@ -11,7 +11,7 @@ const AcceptedEvents = () => {
       try {
         const data = await retrieveAcceptedEvents();
         setAcceptedEvents(data);
-        console.log("Accepted Event id", data.event_id);
+        // console.log("Accepted Event id", data.event_id);
       } catch (error) {
         console.error("Error fetching accepted events:", error);
       } finally {

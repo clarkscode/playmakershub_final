@@ -63,8 +63,8 @@ const AdminLogin = () => {
         const adminName = `${userMetaData.first_name || ""} ${
           userMetaData.last_name || ""
         }`.trim();
-        console.log("Admin Name:", adminName);
-        console.log("session access_token", session.access_token);
+        // console.log("Admin Name:", adminName);
+        // console.log("session access_token", session.access_token);
 
         // Save tokens and admin name
         const tokenStorage = rememberMe ? localStorage : sessionStorage;

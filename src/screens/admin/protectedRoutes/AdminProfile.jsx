@@ -163,7 +163,7 @@ const AdminProfile = () => {
     } catch (err) {
       console.error("Error refreshing session:", err.message);
       toast.error("Session expired. Please log in again.");
-      navigate("/admin/login");
+      navigate("/adminonly");
     }
   };
 

@@ -4,7 +4,7 @@ import Modal from "../../../components/admin/Reusable/Modal";
 import MemberForm from "../../../components/admin/Reusable/MemberForm";
 import MemberDetailsModal from "../../../components/admin/MemberDetailsModal";
 import Sidebar from "../../../components/admin/Sidebar";
-import Header from "../../../components/admin/Header"; // Adjust the path as needed
+import Header from "../../../components/admin/Header";
 import {
   deleteMember,
   fetchMembers,
@@ -37,8 +37,10 @@ const MemberOrganization = () => {
   const [roles, setRoles] = useState([]);
   const [genres, setGenres] = useState([]);
   const [selectedMember, setSelectedMember] = useState(null);
-  const [filter, setFilter] = useState("all");
+  // const [filter, setFilter] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all"); // Filter by status
+  const [roleFilter, setRoleFilter] = useState("all"); // New state for role filtering
 
   // Pagination states
   const [currentPage, setCurrentPage] = useState(1);
@@ -76,27 +78,16 @@ const MemberOrganization = () => {
     loadMembers();
   }, []);
 
-  /*  
-  OLD CODE - JIECLARKDEV
-
   const filteredMembers = members.filter((member) => {
-    if (filter === "all") return true;
-    return member.status === filter;
-  }); */
+    const matchesStatus =
+      statusFilter === "all" || member.status === statusFilter;
+    const matchesSearch = searchQuery
+      ? member.name.toLowerCase().includes(searchQuery.toLowerCase())
+      : true;
+    const matchesRole =
+      roleFilter === "all" || member.role.includes(roleFilter);
 
-  // Filter members based on status and search query
-  const filteredMembers = members.filter((member) => {
-    if (filter !== "all" && member.status !== filter) {
-      return false;
-    }
-    if (
-      searchQuery &&
-      !member.name.toLowerCase().includes(searchQuery.toLowerCase())
-    ) {
-      return false;
-    }
-
-    return true;
+    return matchesStatus && matchesSearch && matchesRole;
   });
 
   // Calculate paginated members
@@ -105,6 +96,11 @@ const MemberOrganization = () => {
     (currentPage - 1) * itemsPerPage,
     currentPage * itemsPerPage
   );
+
+  const handleRoleFilter = (role) => {
+    setRoleFilter(role);
+    setCurrentPage(1);
+  };
 
   // Check if a member is "New"
   const isNewMember = (joinDate) => {
@@ -194,7 +190,7 @@ const MemberOrganization = () => {
   };
 
   const handleViewDetails = (member) => {
-    console.log(member);
+    // console.log(member);
     setSelectedMember(member);
     setIsDetailsModalOpen(true);
   };
@@ -308,10 +304,12 @@ const MemberOrganization = () => {
               <button
                 key={status}
                 className={`px-4 py-2 ${
-                  filter === status ? "bg-gray-700 text-white" : "bg-gray-200"
+                  statusFilter === status
+                    ? "bg-gray-700 text-white"
+                    : "bg-gray-200"
                 } rounded-lg`}
                 onClick={() => {
-                  setFilter(status);
+                  setStatusFilter(status);
                   setCurrentPage(1);
                 }}
               >
@@ -325,6 +323,28 @@ const MemberOrganization = () => {
           >
             Create Member
           </button>
+        </div>
+
+        {/* Role Filter Buttons */}
+        <div className="px-8 py-4 flex space-x-4">
+          {[
+            "all",
+            "guitarist",
+            "vocalist",
+            "bassist",
+            "keyboardist",
+            "percussionist",
+          ].map((role) => (
+            <button
+              key={role}
+              className={`px-4 py-2 ${
+                roleFilter === role ? "bg-blue-500 text-white" : "bg-gray-200"
+              } rounded-lg`}
+              onClick={() => handleRoleFilter(role)}
+            >
+              {role.charAt(0).toUpperCase() + role.slice(1)}
+            </button>
+          ))}
         </div>
 
         {/* Search Input */}
@@ -433,7 +453,7 @@ const MemberOrganization = () => {
           onDelete={() => handleDeleteMember(selectedMember)}
         />
       )}
-      {console.log("selected member ", selectedMember)}
+      {/* {console.log("selected member ", selectedMember)} */}
     </div>
   );
 };

@@ -19,7 +19,7 @@ const VALIDATION_ERRORS = {
 
 // Helper Functions
 const validateEmail = (email) => /\S+@\S+\.\S+/.test(email);
-const validatePhoneNumber = (phone) => /^\d{10,12}$/.test(phone);
+const validatePhoneNumber = (phone) => /^09\d{9}$/.test(phone);
 
 // Function to check for phone number uniqueness
 const checkPhoneNumberUniqueness = async (phone) => {
@@ -49,7 +49,7 @@ const MemberForm = ({
   loading,
   handleSubmit,
 }) => {
-  const [newRole, setNewRole] = useState("");
+  // const [newRole, setNewRole] = useState("");
   const [newGenre, setNewGenre] = useState("");
   const [profilePicture, setProfilePicture] = useState(null);
   const [uploading, setUploading] = useState(false);
@@ -57,13 +57,52 @@ const MemberForm = ({
   const [errors, setErrors] = useState({});
   const [formIsValid, setFormIsValid] = useState(false);
 
-  // Add a role
-  const handleAddRole = () => {
-    if (newRole) {
-      setRoles((prev) => [...prev, newRole.trim().toLowerCase()]);
-      setNewRole("");
+  // Hardcoded lists for roles and genres
+  const availableRoles = [
+    "guitarist",
+    "vocalist",
+    "bassist",
+    "keyboardist",
+    "percussionist",
+  ];
+  const availableGenres = [
+    "Rock",
+    "Pop",
+    "Jazz",
+    "Classical",
+    "Hip-Hop",
+    "etc..",
+  ];
+
+  // Handle role selection
+  const handleRoleSelection = (role) => {
+    if (roles.includes(role)) {
+      // Remove the role if already selected
+      setRoles(roles.filter((r) => r !== role));
+    } else if (roles.length < 2) {
+      // Add the role if fewer than 2 are selected
+      setRoles([...roles, role]);
+    } else {
+      toast.error("You can select only 2 roles.");
     }
   };
+
+  // Handle genre selection
+  // const handleGenreChange = (e) => {
+  //   const selectedGenres = Array.from(
+  //     e.target.selectedOptions,
+  //     (option) => option.value
+  //   );
+  //   setGenres(selectedGenres);
+  // };
+
+  // Add a role
+  // const handleAddRole = () => {
+  //   if (newRole) {
+  //     setRoles((prev) => [...prev, newRole.trim().toLowerCase()]);
+  //     setNewRole("");
+  //   }
+  // };
 
   // Add a genre
   const handleAddGenre = () => {
@@ -76,7 +115,9 @@ const MemberForm = ({
   // Handle input changes
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    const updatedValue = name === "mobile" ? value.replace(/\D/g, "") : value; // Allow only numbers for phone
+    const updatedValue =
+      name === "mobile" ? value.replace(/\D/g, "").slice(0, 11) : value;
+    // Allow only numbers for phone and 11 digits only
     setNewMember((prev) => ({ ...prev, [name]: updatedValue }));
   };
 
@@ -212,7 +253,7 @@ const MemberForm = ({
       />
 
       {/* Roles */}
-      <TagInput
+      {/* <TagInput
         label="Role(s)"
         value={newRole}
         items={roles}
@@ -220,6 +261,15 @@ const MemberForm = ({
         onChange={(e) => setNewRole(e.target.value)}
         error={errors.roles}
         placeholder="Enter role"
+      /> */}
+
+      {/* Roles Checkboxes */}
+      <CheckboxInput
+        label="Role(s)"
+        options={availableRoles}
+        selectedOptions={roles}
+        onChange={handleRoleSelection}
+        error={errors.roles}
       />
 
       {/* Genres */}
@@ -231,7 +281,18 @@ const MemberForm = ({
         onChange={(e) => setNewGenre(e.target.value)}
         error={errors.genres}
         placeholder="Enter genre"
+        examples={availableGenres}
       />
+
+      {/* Genres Dropdown */}
+      {/* <DropdownInput
+        label="Genre(s)"
+        options={availableGenres}
+        selectedOptions={genres}
+        onChange={handleGenreChange}
+        multiple
+        error={errors.genres}
+      /> */}
 
       {/* Mobile */}
       <FormInput
@@ -288,6 +349,63 @@ const FormInput = ({
   </div>
 );
 
+// Dropdown Component
+// const DropdownInput = ({
+//   label,
+//   options,
+//   selectedOptions,
+//   onChange,
+//   multiple,
+//   error,
+// }) => (
+//   <div className="mb-4">
+//     <label className="block text-sm font-medium text-gray-700">{label}</label>
+//     <select
+//       multiple={multiple}
+//       value={selectedOptions}
+//       onChange={onChange}
+//       className={`mt-1 block w-full border ${
+//         error ? "border-red-500" : "border-gray-300"
+//       } rounded-md shadow-sm py-2 px-3`}
+//     >
+//       {options.map((option, index) => (
+//         <option key={index} value={option}>
+//           {option}
+//         </option>
+//       ))}
+//     </select>
+//     {error && <p className="text-red-500 text-sm mt-1">{error}</p>}
+//   </div>
+// );
+
+// Checkbox Input Component for Roles
+const CheckboxInput = ({
+  label,
+  options,
+  selectedOptions,
+  onChange,
+  error,
+}) => (
+  <div className="mb-4">
+    <label className="block text-sm font-medium text-gray-700">{label}</label>
+    <div className="mt-2 space-y-2">
+      {options.map((option, index) => (
+        <label key={index} className="flex items-center">
+          <input
+            type="checkbox"
+            value={option}
+            checked={selectedOptions.includes(option)}
+            onChange={() => onChange(option)}
+            className="mr-2"
+          />
+          {option}
+        </label>
+      ))}
+    </div>
+    {error && <p className="text-red-500 text-sm mt-1">{error}</p>}
+  </div>
+);
+
 // Tag Input Component
 const TagInput = ({
   label,
@@ -297,9 +415,16 @@ const TagInput = ({
   onChange,
   error,
   placeholder,
+  examples,
 }) => (
   <div className="mb-4">
     <label className="block text-sm font-medium text-gray-700">{label}</label>
+    {/* Display Notes or Examples */}
+    {examples && (
+      <p className="text-sm text-gray-500 mt-1 mb-2">
+        Examples: {examples.join(", ")}
+      </p>
+    )}
     <div className="flex space-x-2">
       <input
         type="text"

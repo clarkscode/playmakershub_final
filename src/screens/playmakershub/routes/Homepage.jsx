@@ -622,7 +622,7 @@ const Homepage = () => {
             </div>
             <div className="flex items-center">
               <p className="text-lg text-[#C1C2D3] font-semibold mr-2">
-                Booking ID has been sent to your email
+                Booking ID has been sent to your email, check on spam
               </p>
             </div>
             <button
