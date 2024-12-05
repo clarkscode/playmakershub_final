@@ -1,5 +1,5 @@
 import AdminLogin from "./authentication/admin/AdminLogin";
-
+import { lazy, Suspense } from "react";
 // admin routes
 import AdminNotification from "./screens/admin/protectedRoutes/AdminNotification";
 import EventManagement from "./screens/admin/protectedRoutes/EventManagement";
@@ -19,13 +19,12 @@ import ProtectedRoutes from "./utils/ProtectedRoutes";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import AdminProtectedRoutes from "./utils/AdminProtectedRoutes";
 import NotFound from "./components/error/NotFound";
-import ChatPage from "./components/chat/Chatpage";
 import Events from "./components/playmakershub/Events";
 
 import Join from "./components/playmakershub/Join";
 import AboutUs from "./components/playmakershub/AboutUs";
 import CreateAdmin from "./hidden/CreateAdmin";
-
+const ChatPage = lazy(() => import("./components/chat/ChatPage"));
 const App = () => {
   return (
     <BrowserRouter>
@@ -59,7 +58,14 @@ const App = () => {
           <Route element={<EventStatistics />} path="/admin/event-statistics" />
           <Route element={<AdminNotification />} path="/admin/notification" />
           <Route element={<AdminProfile />} path="/admin/profile" />
-          <Route element={<ChatPage />} path="/admin/chat" />
+          <Route
+            element={
+              <Suspense>
+                <ChatPage />
+              </Suspense>
+            }
+            path="/admin/chat"
+          />
         </Route>
         {/* hidden routes for developer */}
         <Route element={<CreateAdmin />} path="/abcdefghijklmnopqrstuvwxyz" />
