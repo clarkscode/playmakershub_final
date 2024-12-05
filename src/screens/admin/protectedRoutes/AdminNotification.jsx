@@ -12,10 +12,17 @@ const AdminNotification = () => {
   const [error, setError] = useState(null);
 
   useEffect(() => {
+    const runCheckAndNotifyEvents = async () => {
+      await checkAndNotifyAllEvents();
+    };
+    runCheckAndNotifyEvents();
+  }, []);
+
+  useEffect(() => {
     // Fetch notifications and run initial event checks
     const initialize = async () => {
-      await checkAndNotifyAllEvents(); // Check and notify events on load
-      await fetchNotifications(); // Fetch existing notifications
+      await fetchNotifications();
+      // Fetch existing notifications
     };
 
     initialize();
@@ -93,17 +100,22 @@ const AdminNotification = () => {
         .maybeSingle();
 
       if (requiredError) {
+        // console.error(
+        //   `Error fetching musician requirements for event ID ${eventId}:`,
+        //   requiredError
+        // );
         console.error(
-          `Error fetching musician requirements for event ID ${eventId}:`,
+          `requiredError: Error fetching musician requirements`,
           requiredError
         );
         return;
       }
 
       if (!required) {
-        console.warn(
-          `No musician requirements found for event ID ${eventId}. Skipping this event.`
-        );
+        // console.warn(
+        //   `No musician requirements found for event ID ${eventId}. Skipping this event.`
+        // );
+        console.warn(`requiredError: No musician requirements found`);
         return;
       }
 
@@ -120,10 +132,11 @@ const AdminNotification = () => {
         .eq("event_id", eventId);
 
       if (participantsError) {
-        console.error(
-          `Error fetching participants for event ID ${eventId}:`,
-          participantsError
-        );
+        // console.error(
+        //   `Error fetching participants for event ID ${eventId}:`,
+        //   participantsError
+        // );
+        console.error(`Error fetching participants `, participantsError);
         return;
       }
 
@@ -135,10 +148,11 @@ const AdminNotification = () => {
           .single();
 
         if (eventError) {
-          console.error(
-            `Error fetching event name for event ID ${eventId}:`,
-            eventError
-          );
+          // console.error(
+          //   `Error fetching event name for event ID ${eventId}:`,
+          //   eventError
+          // );
+          console.error(`Error fetching event name`, eventError);
           return;
         }
 
@@ -152,10 +166,11 @@ const AdminNotification = () => {
             .maybeSingle();
 
         if (notificationCheckError) {
-          console.error(
-            `Error checking existing notification for event ID ${eventId}:`,
-            notificationCheckError
-          );
+          // console.error(
+          //   `Error checking existing notification for event ID ${eventId}:`,
+          //   notificationCheckError
+          // );
+          console.error(`No existing notification`, notificationCheckError);
           return;
         }
 
@@ -173,18 +188,27 @@ const AdminNotification = () => {
             ]);
 
           if (notificationError) {
+            // console.error(
+            //   `Error inserting notification for event ID ${eventId}:`,
+            //   notificationError
+            // );
             console.error(
-              `Error inserting notification for event ID ${eventId}:`,
+              `notificationErrorError: inserting notification`,
               notificationError
             );
           } else {
-            console.log(`Notification sent for event ID ${eventId}`);
+            // console.log(`Notification sent for event ID ${eventId}`);
+            console.log(`notificationError else error: Notification sent`);
           }
         }
       }
     } catch (err) {
+      // console.error(
+      //   `Unexpected error in checkAndNotifyEventFull for event ID ${eventId}:`,
+      //   err
+      // );
       console.error(
-        `Unexpected error in checkAndNotifyEventFull for event ID ${eventId}:`,
+        `Catch error: Unexpected error in checkAndNotifyEventFull`,
         err
       );
     }
