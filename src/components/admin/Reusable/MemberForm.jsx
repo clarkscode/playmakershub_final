@@ -104,7 +104,7 @@ const MemberForm = ({
 
       if (error) throw new Error(error.message);
 
-      const manualPublicURL = `${import.meta.env.VITE_IMG_URL}/${data.path}`;
+      const manualPublicURL = `https://jpeheolrqpywermjdcyg.supabase.co/storage/v1/object/public/profiles/${data.path}`;
       toast.success("Profile picture uploaded successfully!");
       setNewMember((prev) => ({ ...prev, profile_image: manualPublicURL }));
     } catch (error) {
