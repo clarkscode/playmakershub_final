@@ -249,11 +249,35 @@ const MemberOrganization = () => {
 
   const handleDeleteMember = async (info) => {
     try {
-      const { authid, id } = info;
+      const { authid, id, profile_image } = info;
+      // Ensure profile_image is passed in info
       setLoading(true);
+      console.log("profile image of member", profile_image);
+      // Step 1: Delete the profile picture from Supabase storage
+      if (profile_image) {
+        const fileName = profile_image.split("/").pop(); // Extract the file name from the URL
+        console.log("Extracted file name:", fileName);
+
+        const { error: deleteImageError } = await supabase.storage
+          .from("profiles")
+          .remove([fileName]);
+
+        if (deleteImageError) {
+          console.error(
+            "Error deleting profile picture:",
+            deleteImageError.message
+          );
+          toast.error("Failed to delete profile picture.");
+        } else {
+          console.log("Profile picture deleted successfully:", fileName);
+          toast.success("Profile picture deleted successfully.");
+        }
+      }
+      // Step 2: Delete the member from the database
       await deleteMember(id);
       setMembers(members.filter((member) => member.id !== id));
 
+      // Step 3: Delete the authentication user
       const { error } = await supabaseAdmin.auth.admin.deleteUser(authid);
 
       if (error) {
@@ -261,7 +285,6 @@ const MemberOrganization = () => {
           "Error deleting user from authentication:",
           error.message
         );
-        // Handle error if needed
       }
 
       setIsDetailsModalOpen(false);
@@ -353,7 +376,6 @@ const MemberOrganization = () => {
                       }}
                     />
                   )}
-                  {console.log("each member data", member)}
                   <MemberCard {...member} />
                 </div>
               );
@@ -411,6 +433,7 @@ const MemberOrganization = () => {
           onDelete={() => handleDeleteMember(selectedMember)}
         />
       )}
+      {console.log("selected member ", selectedMember)}
     </div>
   );
 };

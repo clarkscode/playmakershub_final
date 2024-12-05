@@ -717,9 +717,9 @@ export const fetchMembers = async () => {
     }
 
     // Debugging to verify backouts data
-    if (backouts) {
-      console.log("Backouts data:", backouts);
-    }
+    // if (backouts) {
+    //   console.log("Backouts data:", backouts);
+    // }
 
     // Count backouts for each user
     const backoutCounts = backouts.reduce((acc, backout) => {
