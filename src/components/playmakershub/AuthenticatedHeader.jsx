@@ -496,7 +496,7 @@ const AuthenticatedHeader = () => {
       {/* Edit Profile Modal */}
       {isModalOpen && (
         <div className="fixed inset-0 flex items-center justify-center z-20 bg-black bg-opacity-50">
-          <div className="bg-white w-1/3 rounded-lg shadow-lg p-6">
+          <div className="bg-white w-1/2 rounded-lg shadow-lg p-6 max-h-screen overflow-y-auto">
             <h3 className="text-lg font-bold mb-4">Edit Profile</h3>
             {memberDetails?.is_super_admin ? (
               <div className=" p-4 mb-6">
