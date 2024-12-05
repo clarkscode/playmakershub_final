@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import ReCAPTCHA from "react-google-recaptcha";
 import { toast } from "react-toastify";
 import { adminCreateEventProcess, supabase } from "../../../database/supabase";
+import { useNavigate } from "react-router-dom";
 
 const CreateEventModal = ({ isOpen, onClose }) => {
   const [formData, setFormData] = useState({
@@ -37,6 +38,7 @@ const CreateEventModal = ({ isOpen, onClose }) => {
   const [adminName, setAdminName] = useState(null);
 
   const today = new Date().toISOString().split("T")[0];
+  const navigate = useNavigate();
 
   // Fetch adminName from Supabase Auth when the component mounts
   useEffect(() => {
@@ -62,6 +64,10 @@ const CreateEventModal = ({ isOpen, onClose }) => {
       } catch (error) {
         console.error("Error fetching admin name:", error);
         toast.error("Failed to fetch admin information.");
+        await supabase.auth.signOut();
+        localStorage.removeItem("adminAuthToken");
+        localStorage.removeItem("adminRefreshToken");
+        navigate("/adminonly"); // Redirect to login page
       }
     };
 
@@ -165,10 +171,10 @@ const CreateEventModal = ({ isOpen, onClose }) => {
       return false;
     }
 
-    // if (!email.endsWith("@ustp.edu.ph")) {
-    //   toast.error("Only @ustp.edu.ph email addresses are allowed.");
-    //   return false;
-    // }
+    if (!email.endsWith("@ustp.edu.ph")) {
+      toast.error("Only @ustp.edu.ph email addresses are allowed.");
+      return false;
+    }
 
     if (!captchaVerified) {
       toast.error("Please verify the CAPTCHA.");

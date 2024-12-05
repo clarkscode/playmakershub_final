@@ -30,8 +30,7 @@ const EventCard = ({
   maxParticipants,
 }) => {
   const navigate = useNavigate();
-  const [participationFilter, setParticipationFilter] =
-    useState("Open to anyone");
+  const [participationFilter, setParticipationFilter] = useState("green");
 
   // Determine the event status for specific styling and behavior
   const isRejected = status === "Rejected";
@@ -138,38 +137,43 @@ const EventCard = ({
       alert("Failed to reject the event.");
     }
   };
+  // Insert statusesToNotify along with event_id into status_required table
+  const insertStatusRequired = async (eventId, statuses) => {
+    try {
+      const { data, error } = await supabase
+        .from("status_required")
+        .insert([{ event_id: eventId, status_name: statuses }]);
+      // statuses is Array
+      if (error) {
+        throw new Error(`Failed to insert statuses: ${error.message}`);
+      }
+
+      console.log("Inserted into status_required:", data);
+      return data;
+    } catch (error) {
+      console.error("Error in insertStatusRequired:", error.message);
+      throw error;
+    }
+  };
 
   const notifyMembersBasedOnFilter = async (eventId, eventTitle, filter) => {
     let statusesToNotify = [];
 
     if (filter === "green") {
+      console.log("filter", filter);
       statusesToNotify = ["active", "inactive", "probationary"]; // Notify all members
     } else if (filter === "orange") {
+      console.log("filter", filter);
+
       statusesToNotify = ["inactive", "probationary"]; // Notify inactive(orange) and probationary (red) members
     } else if (filter === "red") {
+      console.log("filter", filter);
+
       statusesToNotify = ["probationary"]; // Notify only probationary(red) members
     }
 
     try {
-      // Insert statusesToNotify along with event_id into status_required table
-      const { data: statusRequiredData, error: statusRequiredError } =
-        await supabase.from("status_required").insert([
-          {
-            event_id: eventId,
-            status_name: statusesToNotify, // Array of statuses
-          },
-        ]);
-
-      if (statusRequiredError) {
-        throw new Error(
-          `Error inserting statuses into status_required table: ${statusRequiredError.message}`
-        );
-      }
-
-      console.log(
-        "Statuses successfully inserted into status_required:",
-        statusRequiredData
-      );
+      await insertStatusRequired(eventId, statusesToNotify);
 
       // Fetch members based on participation status
       const { data: members, error } = await supabase
@@ -354,6 +358,7 @@ const EventCard = ({
               value={participationFilter}
               onChange={(e) => {
                 setParticipationFilter(e.target.value);
+                console.log("selected filter", e.target.value);
               }}
               className="block w-full px-4 py-2 text-sm font-medium text-white bg-gray-700 rounded-md"
             >

@@ -783,10 +783,12 @@ export const fetchMemberById = async (id) => {
 export const updateMember = async (id, updatedData) => {
   try {
     console.log("Updating member with ID:", id, "Data:", updatedData);
+    // Remove `totalBackouts` field if it exists
+    const { totalBackouts, ...dataToUpdate } = updatedData;
 
     const { data, error } = await supabase
       .from("members_orgs")
-      .update(updatedData)
+      .update(dataToUpdate)
       .eq("id", id);
 
     if (error) {

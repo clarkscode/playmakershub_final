@@ -43,7 +43,9 @@ const OngoingEvents = () => {
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
       {ongoingEvents.map((event, index) => {
-        console.log(event);
+        {
+          /* console.log(event); */
+        }
         return (
           <EventCard
             key={index}
