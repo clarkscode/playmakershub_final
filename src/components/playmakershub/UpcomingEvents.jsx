@@ -56,9 +56,9 @@ const UpcomingEvents = () => {
           // toast.error(
           //   "No member record found. Only members can participate in events."
           // );
-          console.error(
-            "You are admin. Only members can participate in events."
-          );
+          // console.error(
+          //   "You are admin. Only members can participate in events."
+          // );
           setMemberDetails(null); // Reset member details
           return;
         }
@@ -106,7 +106,8 @@ const UpcomingEvents = () => {
     }
 
     if (!memberDetails) {
-      toast.error("Member details not found.");
+      // toast.error("Member details not found.");
+      toast.error("Only members can participate in events.");
       return;
     }
 
