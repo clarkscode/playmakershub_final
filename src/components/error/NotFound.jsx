@@ -9,7 +9,7 @@ const NotFound = () => {
             4{" "}
             <img
               src={playmakersLogo}
-              alt="opensea logo"
+              alt="playmakers"
               width={160}
               height={130}
             />{" "}

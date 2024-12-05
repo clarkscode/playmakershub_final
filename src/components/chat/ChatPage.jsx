@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
-import { supabase } from "../../database/supabase";
 import Sidebar from "../admin/Sidebar";
 import Header from "../admin/Header";
 import dayjs from "dayjs";
+import { supabase } from "../../database/supabase";
 
 const ChatPage = () => {
   const [messages, setMessages] = useState([]);
