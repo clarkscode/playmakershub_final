@@ -16,7 +16,7 @@ import { toast } from "react-toastify";
 import sendEmail from "../../../database/sendEmail";
 import { Chip } from "@mui/material";
 import { NewReleases as NewBadgeIcon } from "@mui/icons-material";
-import Tooltip from "../../../components/admin/Reusable/ToolTip";
+import ToolTip from "../../../components/admin/Reusable/ToolTip";
 
 const MemberOrganization = () => {
   const [members, setMembers] = useState([]);
@@ -319,7 +319,7 @@ const MemberOrganization = () => {
             ))}
           </div>
           <div className="flex items-center space-x-2">
-            <Tooltip />
+            <ToolTip />
             <button
               className="bg-[#5C1B33] text-white px-6 py-2 rounded-lg"
               onClick={handleCreateAccount}

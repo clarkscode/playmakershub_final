@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { FaQuestion } from "react-icons/fa";
 
-const Tooltip = () => {
+const ToolTip = () => {
   const [isTooltipOpen, setIsTooltipOpen] = useState(false);
   const tooltipRef = useRef(null);
 
@@ -77,4 +77,4 @@ const Tooltip = () => {
   );
 };
 
-export default Tooltip;
+export default ToolTip;
