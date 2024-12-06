@@ -640,7 +640,7 @@ const BookingForm = ({
         {!isViewMode && (
           <div className="mb-6">
             <ReCAPTCHA
-              sitekey="6LeiMlkqAAAAAIByFlSuL0Wb8-akUKqWXbPsPrC9"
+              sitekey="6Ld7-ZMqAAAAAF7YrZhOzjlo4htz7PbAuT7MiJgo"
               onChange={handleCaptchaVerify}
             />
           </div>
