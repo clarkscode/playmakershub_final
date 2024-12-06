@@ -523,7 +523,7 @@ const CreateEventModal = ({ isOpen, onClose }) => {
           {/* CAPTCHA */}
           <div className="mb-6">
             <ReCAPTCHA
-              sitekey="6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI"
+              sitekey="6LeiMlkqAAAAAIByFlSuL0Wb8-akUKqWXbPsPrC9"
               onChange={handleCaptchaVerify}
             />
           </div>

@@ -111,6 +111,24 @@ const UpcomingEvents = () => {
       return;
     }
 
+    // Step 1: Restriction: Prevent participation if the user has 2+ backouts
+    const { data: backouts, error: backoutError } = await supabase
+      .from("backouts")
+      .select("*")
+      .eq("user_id", memberDetails.id);
+
+    if (backoutError) {
+      console.error("Error checking backouts:", backoutError.message);
+      return;
+    }
+
+    if (backouts.length >= 2) {
+      toast.error(
+        "You cannot participate in events because you have 2 or more backouts."
+      );
+      return;
+    }
+    // Step 2: Check if the member has the required role for participation
     const memberRoles = JSON.parse(memberDetails.role || "[]");
 
     if (!memberRoles.includes(role)) {
@@ -118,7 +136,8 @@ const UpcomingEvents = () => {
       return;
     }
 
-    // setParticipationLoading(event.eventId);
+    // Step 3: Check if the member meets the status requirement for the event
+
     try {
       setParticipationLoading(event.eventId);
 
@@ -142,6 +161,7 @@ const UpcomingEvents = () => {
       // `status` column in `members_orgs`
       console.log("member status", memberStatus);
       console.log("required Statuses on event", requiredStatuses);
+
       // Check if the member's status is in the required statuses
       if (!requiredStatuses.includes(memberStatus)) {
         toast.error(
@@ -151,7 +171,7 @@ const UpcomingEvents = () => {
         );
         return;
       }
-
+      // Step 4: Insert participation for the user in the event
       const response = await handleParticipation(
         user.id,
         event,
@@ -160,6 +180,7 @@ const UpcomingEvents = () => {
       );
       if (response.success) {
         toast.success(response.message);
+        // Refresh events and member details
         const refreshedEvents = await retrieveOngoingEvents();
         setEvents(refreshedEvents);
       } else {

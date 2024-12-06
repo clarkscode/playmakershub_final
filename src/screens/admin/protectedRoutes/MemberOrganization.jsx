@@ -16,6 +16,7 @@ import { toast } from "react-toastify";
 import sendEmail from "../../../database/sendEmail";
 import { Chip } from "@mui/material";
 import { NewReleases as NewBadgeIcon } from "@mui/icons-material";
+import Tooltip from "../../../components/admin/Reusable/ToolTip";
 
 const MemberOrganization = () => {
   const [members, setMembers] = useState([]);
@@ -317,12 +318,15 @@ const MemberOrganization = () => {
               </button>
             ))}
           </div>
-          <button
-            className="bg-[#5C1B33] text-white px-6 py-2 rounded-lg"
-            onClick={handleCreateAccount}
-          >
-            Create Member
-          </button>
+          <div className="flex items-center space-x-2">
+            <Tooltip />
+            <button
+              className="bg-[#5C1B33] text-white px-6 py-2 rounded-lg"
+              onClick={handleCreateAccount}
+            >
+              Create Member
+            </button>
+          </div>
         </div>
 
         {/* Role Filter Buttons */}

@@ -17,25 +17,7 @@ const AdminProfile = () => {
   const fetchAdminData = async () => {
     try {
       setLoading(true);
-
-      // // Get the token from localStorage
-      // const adminAuthToken = localStorage.getItem("adminAuthToken");
-      // if (!adminAuthToken) throw new Error("Authentication token is missing.");
-
-      // // Restore session using the token
-      // const { data: session, error: sessionError } =
-      //   await supabase.auth.setSession({
-      //     access_token: adminAuthToken,
-      //     refresh_token: localStorage.getItem("adminRefreshToken"),
-      //     // Save refresh token during login
-      //   });
-
-      // if (sessionError) throw new Error(sessionError.message);
-
-      // const { user } = session;
-      // if (!user) throw new Error("No authenticated user found.");
-
-      // Get the current authenticated user
+      // Get the current authenticated admin user
       const {
         data: { user },
         error: userError,
@@ -147,30 +129,6 @@ const AdminProfile = () => {
       setSaving(false);
     }
   };
-  // // old code refresh session
-  // const refreshSession = async () => {
-  //   try {
-  //     const { data, error } = await supabase.auth.refreshSession();
-  //     if (error) {
-  //       console.error("Failed to refresh session:", error);
-  //       throw error;
-  //     }
-
-  //     // Update tokens in localStorage
-  //     const { session } = data;
-  //     localStorage.setItem("adminAuthToken", session.access_token);
-  //     localStorage.setItem("adminRefreshToken", session.refresh_token);
-  //   } catch (err) {
-  //     console.error("Error refreshing session:", err.message);
-  //     toast.error("Session expired. Please log in again.");
-  //     const { error } = await supabase.auth.signOut();
-  //     if (error) {
-  //       console.log(error);
-  //     } else {
-  //       navigate("/adminonly");
-  //     }
-  //   }
-  // };
 
   const refreshSession = async () => {
     try {

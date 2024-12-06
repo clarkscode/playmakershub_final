@@ -34,7 +34,7 @@ const AuthenticatedHeader = () => {
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(3);
   const [updatedProfile, setUpdatedProfile] = useState({});
-  const [color, setColor] = useState("Orange");
+  const [color, setColor] = useState("orange");
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [notifications, setNotifications] = useState([]);
 
@@ -128,7 +128,14 @@ const AuthenticatedHeader = () => {
 
         if (participationStatus) {
           console.log("member participation status", participationStatus);
-          setColor(participationStatus);
+          // Update the status color based on participation status
+          setColor(
+            participationStatus === "active"
+              ? "green"
+              : participationStatus === "inactive"
+              ? "orange"
+              : "red"
+          );
         }
         fetchParticipatedEvents(authId);
         setMemberDetails(data);
@@ -301,16 +308,21 @@ const AuthenticatedHeader = () => {
 
   const fetchParticipationStatus = async (authId, membersId) => {
     try {
-      const { data: participations, error } = await supabase
+      // Fetch all participations for the user in the current month
+      const { data: participations, error: participationError } = await supabase
         .from("participation")
         .select("*")
         .eq("user_id", authId);
 
-      if (error) {
-        console.error("Error fetching participation data:", error.message);
-        return "Inactive";
+      if (participationError) {
+        console.error(
+          "Error fetching participation data:",
+          participationError.message
+        );
+        // return "inactive";
       }
 
+      // Fetch all backouts for the user
       const { data: backouts, error: backoutError } = await supabase
         .from("backouts")
         .select("*")
@@ -318,27 +330,64 @@ const AuthenticatedHeader = () => {
 
       if (backoutError) {
         console.error("Error fetching backout data:", backoutError.message);
-        return "Inactive";
+        return "inactive";
       }
+
       console.log("fetchParticipationStatus", participations);
 
+      // Calculate counts
       const participationsPerMonth = participations.filter((p) =>
         dayjs(p.event_start_date).isSame(dayjs(), "month")
       ).length;
-
       const backoutCount = backouts.length;
 
-      console.log("participationsPerMonth", participationsPerMonth);
-      console.log("backouts", backoutCount);
+      console.log("Participations this month:", participationsPerMonth);
+      console.log("Backout count:", backoutCount);
 
-      if (participationsPerMonth >= 2) return "Green";
-      if (backoutCount === 1) return "Orange";
-      if (backoutCount >= 2) return "Red";
+      // Determine status
+      // if (backoutCount >= 2) {
+      //   return "probationary"; // User with 2 or more backouts is probationary
+      // } else if (backoutCount === 1) {
+      //   if (participationsPerMonth >= 2) {
+      //     return "active"; // 1 backout but participated in 2+ events
+      //   } else {
+      //     return "inactive"; // 1 backout with less than 2 participations
+      //   }
+      // }
 
-      return "Inactive";
+      // return "active"; // Default to active if no backouts
+
+      // Determine status based on the rules
+      let newStatus;
+      if (backoutCount >= 2) {
+        newStatus = "probationary"; // User with 2 or more backouts is probationary
+      } else if (backoutCount === 1) {
+        if (participationsPerMonth >= 2) {
+          newStatus = "active"; // 1 backout but participated in 2+ events
+        } else {
+          newStatus = "inactive"; // 1 backout with less than 2 participations
+        }
+      } else {
+        newStatus = "active"; // Default to active if no backouts
+      }
+
+      // Update the member's status in the database
+      const { error: updateStatusError } = await supabase
+        .from("members_orgs")
+        .update({ status: newStatus })
+        .eq("id", membersId);
+
+      if (updateStatusError) {
+        console.error(
+          "Error updating member status:",
+          updateStatusError.message
+        );
+      }
+
+      return newStatus; // Return the determined status
     } catch (err) {
       console.error("Error calculating participation status:", err.message);
-      return "Inactive";
+      return "inactive";
     }
   };
 
@@ -460,9 +509,9 @@ const AuthenticatedHeader = () => {
               <p className="flex items-center gap-2">
                 <span
                   className={`w-3 h-3 rounded-full ${
-                    color === "Green"
+                    color === "green"
                       ? "bg-green-500"
-                      : color === "Orange"
+                      : color === "orange"
                       ? "bg-orange-500"
                       : "bg-red-500"
                   }`}
