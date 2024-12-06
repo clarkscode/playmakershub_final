@@ -60,7 +60,7 @@ const App = () => {
           <Route element={<AdminProfile />} path="/admin/profile" />
           <Route
             element={
-              <Suspense>
+              <Suspense fallback={<div>Loading chat...</div>}>
                 <ChatPage />
               </Suspense>
             }

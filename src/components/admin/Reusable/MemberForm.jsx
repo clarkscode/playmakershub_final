@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { supabase } from "../../../database/supabase";
-import { toast, ToastContainer } from "react-toastify";
+import { toast } from "react-toastify";
 
 // Validation Messages
 const VALIDATION_ERRORS = {
@@ -317,8 +317,6 @@ const MemberForm = ({
 
       {/* Submit Button */}
       <SubmitButton isDisabled={!formIsValid || loading} loading={loading} />
-
-      <ToastContainer position="top-right" autoClose={3000} />
     </form>
   );
 };

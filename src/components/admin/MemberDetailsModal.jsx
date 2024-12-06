@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { FaCheckCircle, FaPen, FaTrash, FaBell } from "react-icons/fa";
 import sendEmail from "../../database/sendEmail";
-import { toast, ToastContainer } from "react-toastify";
+import { toast } from "react-toastify";
 import { supabase } from "../../database/supabase";
 
 const MemberDetailsModal = ({ member, onClose, onUpdate, onDelete }) => {
@@ -129,7 +129,6 @@ const MemberDetailsModal = ({ member, onClose, onUpdate, onDelete }) => {
       id="modal-overlay"
       onClick={handleClickOutside}
     >
-      <ToastContainer />
       <div className="bg-white rounded-lg w-full max-w-2xl">
         {/* Header Section */}
         <div className="bg-gradient-to-r from-[#C2396C] to-[#5C1B33] px-5 py-5 rounded-t-lg text-white relative">

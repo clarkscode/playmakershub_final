@@ -76,16 +76,6 @@ const EventCard = ({
 
       if (error) throw error;
 
-      const { error: filterError } = await supabase
-        .from("participation")
-        .update({
-          participant_filter: "green",
-          // Storing "green" but UI shows "Open to anyone"
-        })
-        .eq("event_id", eventId);
-
-      if (filterError) throw filterError;
-
       // Insert a new record in the updates table
       const { error: updatesError } = await supabase.from("updates").insert([
         {

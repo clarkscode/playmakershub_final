@@ -18,6 +18,7 @@ const BookingForm = ({
   onClose,
   captchaVerified,
   status,
+  isMusiciansValid,
 }) => {
   const [bookingIDPopupVisible, setBookingIDPopupVisible] = useState(false);
   const [chatMessages, setChatMessages] = useState([]);
@@ -37,7 +38,7 @@ const BookingForm = ({
   };
 
   const buttonStyle =
-    isEditMode && !captchaVerified
+    (isEditMode && !captchaVerified) || !isMusiciansValid
       ? "bg-gray-400 text-gray-200 cursor-not-allowed"
       : "bg-[#b70039] text-white cursor-pointer";
 
@@ -640,7 +641,9 @@ const BookingForm = ({
         {!isViewMode && (
           <div className="mb-6">
             <ReCAPTCHA
-              // sitekey="6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI" test
+              // test
+              // sitekey="6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI"
+              // production
               sitekey="6Ld7-ZMqAAAAAF7YrZhOzjlo4htz7PbAuT7MiJgo"
               onChange={handleCaptchaVerify}
             />
@@ -653,7 +656,10 @@ const BookingForm = ({
             // className="w-full bg-[#b70039] text-white py-2 rounded-lg cursor-pointer"
             className={`w-full py-2 rounded-lg ${buttonStyle}`}
             disabled={
-              (isEditMode && !captchaVerified) || (isDisabled && !isViewMode)
+              // (isEditMode && !captchaVerified) || (isDisabled && !isViewMode)
+              (isEditMode && !captchaVerified) || // CAPTCHA verification for edit mode
+              (isDisabled && !isViewMode) || // Read-only form restriction
+              !isMusiciansValid // At least one musician validation
             }
           >
             {isViewMode ? "Close" : isEditMode ? "Save Changes" : "Submit"}

@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { toast, ToastContainer } from "react-toastify";
+import { toast } from "react-toastify";
 import {
   retrieveOngoingEvents,
   handleParticipation,
@@ -128,6 +128,32 @@ const UpcomingEvents = () => {
       );
       return;
     }
+
+    // Step 2: Check if the member has already participated in this event
+    const { data: existingParticipation, error: participationError } =
+      await supabase
+        .from("participation")
+        .select("*")
+        .eq("user_id", memberDetails.authid)
+        .eq("event_id", event.event_id);
+
+    if (participationError) {
+      console.error(
+        "Error checking existing participation:",
+        participationError.message
+      );
+      // console.log("event id ", event.event_id);
+      // console.log("user id ", event.user_id);
+      // console.log("memberDetails id ", memberDetails);
+      // console.log("memberDetails id ", memberDetails.authid);
+      return;
+    }
+
+    if (existingParticipation && existingParticipation.length > 0) {
+      toast.error("You have already participated in this event.");
+      return;
+    }
+
     // Step 2: Check if the member has the required role for participation
     const memberRoles = JSON.parse(memberDetails.role || "[]");
 
@@ -139,7 +165,7 @@ const UpcomingEvents = () => {
     // Step 3: Check if the member meets the status requirement for the event
 
     try {
-      setParticipationLoading(event.eventId);
+      setParticipationLoading(event.event_id);
 
       // Fetch the required statuses for the event from the status_required table
       const { data: statusRequired, error: statusError } = await supabase
@@ -448,7 +474,6 @@ const UpcomingEvents = () => {
           No upcoming events available
         </p>
       )}
-      <ToastContainer position="top-right" autoClose={3000} />
     </div>
   );
 };
