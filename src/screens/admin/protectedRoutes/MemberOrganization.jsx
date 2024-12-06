@@ -16,7 +16,7 @@ import { toast } from "react-toastify";
 import sendEmail from "../../../database/sendEmail";
 import { Chip } from "@mui/material";
 import { NewReleases as NewBadgeIcon } from "@mui/icons-material";
-import ToolTip from "../../../components/admin/Reusable/ToolTip";
+import { FaQuestion } from "react-icons/fa";
 
 const MemberOrganization = () => {
   const [members, setMembers] = useState([]);
@@ -42,6 +42,7 @@ const MemberOrganization = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all"); // Filter by status
   const [roleFilter, setRoleFilter] = useState("all"); // New state for role filtering
+  const [isTooltipOpen, setIsTooltipOpen] = useState(false);
 
   // Pagination states
   const [currentPage, setCurrentPage] = useState(1);
@@ -101,6 +102,10 @@ const MemberOrganization = () => {
   const handleRoleFilter = (role) => {
     setRoleFilter(role);
     setCurrentPage(1);
+  };
+
+  const toggleTooltip = () => {
+    setIsTooltipOpen((prevState) => !prevState);
   };
 
   // Check if a member is "New"
@@ -319,7 +324,63 @@ const MemberOrganization = () => {
             ))}
           </div>
           <div className="flex items-center space-x-2">
-            <ToolTip />
+            <div className="ml-3 relative">
+              <FaQuestion
+                className="text-[#5C1B33] cursor-pointer"
+                size={20}
+                onClick={toggleTooltip}
+              />
+              {isTooltipOpen && (
+                <div
+                  className="absolute top-full left-1/2 transform -translate-x-1/2 mt-2 w-64 p-4 bg-white shadow-lg rounded-lg text-gray-700 text-sm z-50"
+                  style={{ maxWidth: "90vw" }}
+                >
+                  <p className="mb-2 font-semibold">
+                    Member Status Change Rules:
+                  </p>
+                  <ul className="list-disc pl-4">
+                    <li>
+                      <span className="font-bold">Case 1:</span> 1 backout =
+                      <span className="text-orange-600 font-semibold">
+                        {" "}
+                        Inactive
+                      </span>
+                      .
+                    </li>
+                    <li>
+                      <span className="font-bold">Case 2:</span> Total
+                      participation: 1 + 1 backout =
+                      <span className="text-orange-600 font-semibold">
+                        {" "}
+                        Inactive
+                      </span>
+                      .
+                    </li>
+                    <li>
+                      <span className="font-bold">Case 3:</span> Participation ≥
+                      2 in a month + 1 backout =
+                      <span className="text-green-600 font-semibold">
+                        {" "}
+                        Active
+                      </span>
+                      .
+                    </li>
+                    <li>
+                      <span className="font-bold">Case 4:</span> Any
+                      participation + 2 backouts in a month =
+                      <span className="text-red-600 font-semibold">
+                        {" "}
+                        Probationary
+                      </span>
+                      .
+                      <span className="italic">
+                        (Admin will review the reason for multiple backouts.)
+                      </span>
+                    </li>
+                  </ul>
+                </div>
+              )}
+            </div>
             <button
               className="bg-[#5C1B33] text-white px-6 py-2 rounded-lg"
               onClick={handleCreateAccount}
