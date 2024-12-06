@@ -6,21 +6,21 @@ import { useNavigate } from "react-router-dom";
 
 const CreateEventModal = ({ isOpen, onClose }) => {
   const [formData, setFormData] = useState({
-    firstName: "Jie clark",
-    lastName: "Terec",
-    email: "jieclarkm@ustp.edu.ph",
-    title: "Admin Event",
+    firstName: "",
+    lastName: "",
+    email: "",
+    title: "",
     eventType: "Department",
     eventTypeName: "",
     startDate: "",
     endDate: "",
     startTime: "",
     endTime: "",
-    location: "USTP Gymnasium",
+    location: "",
     genreThemeHolder: "Genre", // Dropdown to toggle between "Genre" and "Theme"
     genre: "",
     theme: "",
-    description: "Admin event description",
+    description: "",
     // musician requirements
     guitarist: 0,
     vocalist: 0,
@@ -127,6 +127,18 @@ const CreateEventModal = ({ isOpen, onClose }) => {
     }
   };
 
+  const validateMusicians = () => {
+    const { guitarist, vocalist, bassist, keyboardist, percussionist } =
+      formData;
+    return (
+      guitarist > 0 ||
+      vocalist > 0 ||
+      bassist > 0 ||
+      keyboardist > 0 ||
+      percussionist > 0
+    );
+  };
+
   const handleCaptchaVerify = () => {
     setCaptchaVerified(true);
   };
@@ -173,6 +185,13 @@ const CreateEventModal = ({ isOpen, onClose }) => {
 
     if (!email.endsWith("@ustp.edu.ph")) {
       toast.error("Only @ustp.edu.ph email addresses are allowed.");
+      return false;
+    }
+
+    if (!validateMusicians()) {
+      toast.error(
+        "Please specify at least one musician (Guitarist, Vocalist, etc.)."
+      );
       return false;
     }
 
@@ -247,6 +266,8 @@ const CreateEventModal = ({ isOpen, onClose }) => {
   };
 
   if (!isOpen) return null;
+
+  const canSubmit = validateMusicians();
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
@@ -521,22 +542,24 @@ const CreateEventModal = ({ isOpen, onClose }) => {
           </div>
 
           {/* CAPTCHA */}
-          <div className="mb-6">
-            <ReCAPTCHA
-              sitekey="6Ld7-ZMqAAAAAF7YrZhOzjlo4htz7PbAuT7MiJgo"
-              onChange={handleCaptchaVerify}
-            />
-          </div>
+          {canSubmit && (
+            <div className="mb-6">
+              <ReCAPTCHA
+                sitekey="6Ld7-ZMqAAAAAF7YrZhOzjlo4htz7PbAuT7MiJgo"
+                onChange={handleCaptchaVerify}
+              />
+            </div>
+          )}
 
           <div>
             <button
               type="submit"
               className={`w-full py-2 rounded-lg ${
-                captchaVerified
+                canSubmit && captchaVerified
                   ? "bg-blue-500 text-white"
                   : "bg-gray-300 text-gray-600"
               }`}
-              disabled={!captchaVerified || loading}
+              disabled={!canSubmit || !captchaVerified || loading}
             >
               {loading ? "Creating Event..." : "Create Event"}
             </button>
