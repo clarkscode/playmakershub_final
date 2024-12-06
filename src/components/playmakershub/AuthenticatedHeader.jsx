@@ -46,6 +46,10 @@ const AuthenticatedHeader = () => {
 
     if (userError) {
       console.error("Error fetching current user:", userError.message);
+      // clear auth token of member if session is expired - jieclarkdev
+      await supabase.auth.signOut();
+      localStorage.removeItem("authToken");
+      navigate("/member/login");
     }
 
     const userMetadata = user?.user_metadata || {};

@@ -108,7 +108,9 @@ const PastsEvents = () => {
           </div>
         ))
       ) : (
-        <p className="text-white">No past events available</p>
+        <p className="text-gray-600 col-span-full text-center">
+          No past events available
+        </p>
       )}
     </div>
   );

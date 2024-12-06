@@ -35,7 +35,8 @@ const Events = () => {
         </div>
 
         {/* Conditional Rendering of Content */}
-        <div className="p-6">
+        {/* changes made - gi scrollable ang upcoming events and past events */}
+        <div className="p-6 max-h-[700px] overflow-y-auto">
           {activeTab === "past" ? <PastsEvents /> : <UpcomingEvents />}
         </div>
       </main>
