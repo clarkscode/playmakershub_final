@@ -280,6 +280,7 @@ export const retrieveOngoingEvents = async () => {
         `
         *,
         bookings (
+          booking_id,
           organizer_first_name,
           organizer_last_name,
           organizer_email,

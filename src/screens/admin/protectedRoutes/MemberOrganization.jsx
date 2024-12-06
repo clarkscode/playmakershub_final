@@ -221,8 +221,9 @@ const MemberOrganization = () => {
       );
 
       toast.success("Member updated successfully!");
-      if (updatedData.status && updatedData.status !== "active") {
-        console.log("here1");
+      const existingMember = members.find((member) => member.id === id);
+
+      if (updatedData.status && updatedData.status !== existingMember.status) {
         const member = members.find((member) => member.id === id);
         const recipientEmail = member.email;
         const subject = "Account Status Update";

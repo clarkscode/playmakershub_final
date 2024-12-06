@@ -14,6 +14,7 @@ import { formatDateTime } from "./Reusable/FormatDate";
 import { useNavigate } from "react-router-dom";
 
 const EventCard = ({
+  bookingId,
   eventId,
   eventTitle,
   organizer,
@@ -28,9 +29,12 @@ const EventCard = ({
   theme,
   participants,
   maxParticipants,
+  onDeleteEvent,
 }) => {
   const navigate = useNavigate();
   const [participationFilter, setParticipationFilter] = useState("green");
+  // Holds dropdown value in ongoing events
+  const [unsavedStatusRequired, setUnsavedStatusRequired] = useState("green");
 
   // Determine the event status for specific styling and behavior
   const isRejected = status === "Rejected";
@@ -106,6 +110,26 @@ const EventCard = ({
     }
   };
 
+  /* 
+  Update `status_required` if playmakers admin 
+  want to change the participation filter of an event
+  */
+  const handleSaveStatusRequired = async () => {
+    try {
+      // Notify members based on the new filter
+      await notifyMembersBasedOnFilter(
+        eventId,
+        eventTitle,
+        unsavedStatusRequired
+      );
+
+      alert("Status requirement saved successfully!");
+    } catch (error) {
+      console.error("Unexpected error:", error.message);
+      alert("An unexpected error occurred. Please try again.");
+    }
+  };
+
   const handleRejectEvent = async (eventId, organizerEmail, eventTitle) => {
     try {
       const { error } = await supabase
@@ -145,6 +169,71 @@ const EventCard = ({
       throw error;
     }
   };
+  // update status requirement of event
+  const updateStatusRequired = async (eventId, statuses) => {
+    try {
+      const { data, error } = await supabase
+        .from("status_required")
+        .update({ status_name: statuses }) // Update only the `status_name` column
+        .eq("event_id", eventId); // Add WHERE clause to specify the row to update
+      if (error) {
+        throw new Error(`Failed to insert statuses: ${error.message}`);
+      }
+
+      console.log("playmakers admin updated status_required:", data);
+      return data;
+    } catch (error) {
+      console.error("Error in insertStatusRequired:", error.message);
+      throw error;
+    }
+  };
+
+  const handleDeleteEvent = async (bookingId, eventId, eventTitle) => {
+    const confirmDelete = window.confirm(
+      `Deleting the event '${eventTitle}' will permanently remove data. This action cannot be undone. Are you sure you want to proceed?`
+    );
+
+    if (!confirmDelete) return;
+
+    try {
+      // Step 1: Delete all notifications associated with the event
+      const { error: notificationError } = await supabase
+        .from("notifications")
+        .delete()
+        .eq("event_id", eventId); // Delete notifications by event_id
+
+      if (notificationError) {
+        console.error(
+          "Error deleting notifications:",
+          notificationError.message
+        );
+        alert(
+          "Failed to delete the event due to associated notifications. Please try again."
+        );
+        return;
+      }
+
+      // Step 2: Delete the booking, which cascades to events and musician_required
+      const { error: bookingError } = await supabase
+        .from("bookings")
+        .delete()
+        .eq("booking_id", bookingId); // Delete booking by booking_id
+
+      if (bookingError) {
+        console.error("Error deleting booking:", bookingError.message);
+        alert("Failed to delete the event. Please try again.");
+        return;
+      }
+
+      alert(`Event "${eventTitle}"  have been deleted successfully!`);
+
+      // Optionally notify the parent component to update the list
+      onDeleteEvent(bookingId);
+    } catch (error) {
+      console.error("Unexpected error while deleting event:", error.message);
+      alert("An unexpected error occurred. Please try again.");
+    }
+  };
 
   const notifyMembersBasedOnFilter = async (eventId, eventTitle, filter) => {
     let statusesToNotify = [];
@@ -163,7 +252,15 @@ const EventCard = ({
     }
 
     try {
-      await insertStatusRequired(eventId, statusesToNotify);
+      if (isAccepted) {
+        console.log("I am in Accepted tab");
+        await insertStatusRequired(eventId, statusesToNotify);
+      }
+
+      if (isOngoing) {
+        console.log("I am in Ongoing tab");
+        await updateStatusRequired(eventId, statusesToNotify);
+      }
 
       // Fetch members based on participation status
       const { data: members, error } = await supabase
@@ -235,12 +332,62 @@ const EventCard = ({
   };
 
   const handleUpdateStatus = async (eventId) => {
-    const result = await updateEventStatusToPublished(eventId);
+    try {
+      // Step 1: Update the event status to "Published"
+      const result = await updateEventStatusToPublished(eventId);
 
-    if (result.success) {
-      alert("Event status updated to Published!");
-    } else {
-      alert(`Failed to update event status: ${result.message}`);
+      if (result.success) {
+        // Step 2: Fetch the event and organizer details
+        const { data: eventData, error } = await supabase
+          .from("events")
+          .select(
+            "event_title, bookings(organizer_email, organizer_first_name, organizer_last_name)"
+          )
+          .eq("event_id", eventId)
+          .single();
+
+        if (error || !eventData) {
+          console.error(
+            "Error fetching event data:",
+            error || "No event found"
+          );
+          alert("Failed to fetch event details for email notification.");
+          return;
+        }
+
+        const { event_title: eventTitle, bookings } = eventData;
+        if (eventData) {
+          console.log("bookings data", bookings);
+        }
+        const organizerEmail = bookings.organizer_email;
+        const organizerName = `${bookings.organizer_first_name} ${bookings.organizer_last_name}`;
+
+        // Step 3: Prepare and send the email notification
+        const subject = `Your event "${eventTitle}" has been published!`;
+        const content = `
+        <p>Dear ${organizerName},</p>
+        <p>Your booked event "<strong>${eventTitle}</strong>" has now been reviewed and published by Playmakers Administrators.</p>
+        <p>You can now view your booked event with its fellow participants at the following link: 
+        <a href="https://www.playmakershub.org/homepage/events/published" target="_blank">https://www.playmakershub.org/homepage/events/published</a></p>
+        <p>Thank you for reaching out to Playmakers - USTP, may you have a wonderful and smooth sailing event!</p>
+        <p>Best Regards,<br/>The Playmakers Family<br/>
+        <a href="https://www.playmakershub.org" target="_blank">www.playmakershub.org</a></p>
+      `;
+
+        const emailResponse = await sendEmail(organizerEmail, subject, content);
+
+        if (emailResponse.error) {
+          console.error("Failed to send email:", emailResponse.error);
+          alert("Event published, but email notification failed.");
+        } else {
+          alert("Event status updated to Published, and organizer notified!");
+        }
+      } else {
+        alert(`Failed to update event status: ${result.message}`);
+      }
+    } catch (error) {
+      console.error("Error updating event status:", error);
+      alert("An unexpected error occurred while updating the event status.");
     }
   };
 
@@ -281,6 +428,14 @@ const EventCard = ({
           <h3 className="font-bold text-lg text-white">{eventTitle}</h3>
           {isAccepted && (
             <CheckCircleIcon sx={{ color: "white", width: 30, height: 30 }} />
+          )}
+          {isOngoing && (
+            <button
+              className="text-sm text-white bg-red-500 px-3 py-1 rounded-md hover:bg-red-600"
+              onClick={() => handleDeleteEvent(bookingId, eventId, eventTitle)}
+            >
+              Delete
+            </button>
           )}
         </div>
       </div>
@@ -358,6 +513,34 @@ const EventCard = ({
                 </option>
               ))}
             </select>
+          </div>
+        )}
+
+        {/* Dropdown and Save Button for Ongoing Events */}
+        {isOngoing && (
+          <div className="mb-4">
+            <label className="block font-semibold mb-2">
+              Participation Filter
+            </label>
+
+            <select
+              value={unsavedStatusRequired}
+              onChange={(e) => setUnsavedStatusRequired(e.target.value)}
+              className="block w-full px-4 py-2 text-sm font-medium text-gray-800 bg-gray-200 rounded-md"
+            >
+              {participationOptions.map((option, index) => (
+                <option key={index} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+
+            <button
+              onClick={handleSaveStatusRequired}
+              className="mt-2 w-full px-4 py-2 text-white bg-blue-600 rounded-md hover:bg-blue-700"
+            >
+              Save
+            </button>
           </div>
         )}
 

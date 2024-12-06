@@ -40,7 +40,39 @@ const MemberDetailsModal = ({ member, onClose, onUpdate, onDelete }) => {
     }));
   };
 
-  const handleSaveChanges = () => {
+  const handleSaveChanges = async () => {
+    // Check if the status changes from probationary to active
+    if (
+      editableMember.status === "active" &&
+      member.status === "probationary"
+    ) {
+      try {
+        // Delete all backout records for the user
+        const { error } = await supabase
+          .from("backouts")
+          .delete()
+          .eq("user_id", member.id);
+
+        if (error) {
+          console.error("Failed to delete backouts:", error);
+          toast.error("Failed to reset backouts. Please try again.");
+          return;
+        }
+
+        toast.success("Backouts reset successfully.");
+
+        // Update state to reflect reset backouts
+        setEditableMember((prev) => ({
+          ...prev,
+          totalBackouts: 0,
+        }));
+      } catch (error) {
+        console.error("Error resetting backouts:", error);
+        toast.error("An unexpected error occurred while resetting backouts.");
+        return;
+      }
+    }
+
     const formattedData = {
       ...editableMember,
       role: JSON.stringify(

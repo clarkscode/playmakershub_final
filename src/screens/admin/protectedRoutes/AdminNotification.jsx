@@ -11,12 +11,17 @@ const AdminNotification = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
+  const [hasInitialized, setHasInitialized] = useState(false);
+
   useEffect(() => {
-    const runCheckAndNotifyEvents = async () => {
-      await checkAndNotifyAllEvents();
-    };
-    runCheckAndNotifyEvents();
-  }, []);
+    if (!hasInitialized) {
+      const runCheckAndNotifyEvents = async () => {
+        await checkAndNotifyAllEvents();
+        setHasInitialized(true);
+      };
+      runCheckAndNotifyEvents();
+    }
+  }, [hasInitialized]);
 
   useEffect(() => {
     // Fetch notifications and run initial event checks

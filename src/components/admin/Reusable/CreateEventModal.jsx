@@ -62,8 +62,8 @@ const CreateEventModal = ({ isOpen, onClose }) => {
 
         setAdminName(fetchedAdminName);
       } catch (error) {
-        console.error("Error fetching admin name:", error);
-        toast.error("Failed to fetch admin information.");
+        // console.error("Error fetching admin name:", error);
+        toast.error("Session expired, redirecting to login");
         await supabase.auth.signOut();
         localStorage.removeItem("adminAuthToken");
         localStorage.removeItem("adminRefreshToken");

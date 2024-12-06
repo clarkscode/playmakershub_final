@@ -636,7 +636,8 @@ const AuthenticatedHeader = () => {
                           {memberDetails.role
                             .split(",")
                             .map((r) => r.trim().replace(/['"[\]]/g, ""))
-                            .join(" and ")}
+                            .join(" and ")
+                            .toUpperCase()}
                         </p>
                       </div>
                       <label className="block text-sm font-medium text-gray-700">

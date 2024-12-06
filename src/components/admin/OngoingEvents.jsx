@@ -40,6 +40,12 @@ const OngoingEvents = () => {
     return <div className="text-center mt-8">No ongoing events found</div>;
   }
 
+  const handleEventDeleted = (deletedEventId) => {
+    setOngoingEvents((prevEvents) =>
+      prevEvents.filter((event) => event.event_id !== deletedEventId)
+    );
+  };
+
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
       {ongoingEvents.map((event, index) => {
@@ -50,6 +56,7 @@ const OngoingEvents = () => {
           <EventCard
             key={index}
             eventId={event.event_id}
+            bookingId={event.bookings.booking_id}
             eventTitle={event.event_title}
             organizer={`${event.bookings.organizer_first_name} ${event.bookings.organizer_last_name}`}
             email={event.bookings.organizer_email}
@@ -69,6 +76,7 @@ const OngoingEvents = () => {
             organization={event.bookings.event_type_name}
             participants={event.participation?.length}
             maxParticipants={event.totalMusicians}
+            onDeleteEvent={handleEventDeleted}
           />
         );
       })}
