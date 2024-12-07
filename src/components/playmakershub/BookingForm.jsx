@@ -389,12 +389,21 @@ const BookingForm = ({
           {/* Input and Send Button */}
           {!isChatResolved && isBookingPending && (
             <div className="flex">
-              <input
-                type="text"
+              <textarea
                 value={newMessage}
                 onChange={(e) => setNewMessage(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && !e.shiftKey) {
+                    e.preventDefault();
+                    handleSendMessage();
+                  } else if (e.key === "Enter" && e.shiftKey) {
+                    e.preventDefault();
+                    setNewMessage((prev) => prev + "\n");
+                  }
+                }}
                 placeholder="Type your message"
-                className="flex-1 p-2 rounded-lg border border-gray-300"
+                className="flex-1 p-2 rounded-lg border border-gray-300 resize-none"
+                rows={1}
               />
               <button
                 onClick={handleSendMessage}

@@ -312,12 +312,23 @@ const ChatPage = () => {
                   {/* Chat Input */}
                   {!disabledChatMessage && (
                     <div className="flex items-center">
-                      <input
-                        type="text"
+                      <textarea
                         value={newMessage}
                         onChange={(e) => setNewMessage(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter" && e.shiftKey) {
+                            // Shift+Enter: Add a new line
+                            e.preventDefault(); // Prevent default behavior of Enter
+                            setNewMessage((prev) => prev + "\n");
+                          } else if (e.key === "Enter") {
+                            // Enter: Send the message
+                            e.preventDefault(); // Prevent newline from being added
+                            handleSendMessage();
+                          }
+                        }}
                         placeholder="Type your message..."
-                        className="flex-grow bg-gray-200 text-gray-800 p-3 rounded-full outline-none mr-2"
+                        className="flex-grow bg-gray-200 text-gray-800 p-3 rounded-lg outline-none mr-2 resize-none"
+                        rows={1} // Automatically grows with content
                       />
                       <button
                         onClick={handleSendMessage}
