@@ -186,22 +186,25 @@ const ChatPage = () => {
           <div className="flex space-x-4">
             {/* Sidebar for Booking List */}
             <div className="w-1/4 bg-white rounded-lg p-4 shadow-lg">
-              <h3 className="text-lg font-semibold mb-2 text-gray-700">
-                Select Booking
-              </h3>
-              {bookings.map((booking) => (
-                <button
-                  key={booking.booking_id}
-                  onClick={() => setSelectedBooking(booking)}
-                  className={`w-full text-left py-2 px-4 rounded-lg mb-2 ${
-                    selectedBooking?.booking_id === booking.booking_id
-                      ? "bg-[#5C1B33] text-white"
-                      : "bg-gray-200 text-gray-700"
-                  }`}
-                >
-                  {booking.events?.[0]?.event_title || "No Title"}
-                </button>
-              ))}
+              {/* Scrollable Container */}
+              <div className="overflow-y-auto max-h-[500px]">
+                <h3 className="text-lg font-semibold mb-2 text-gray-700">
+                  Select Booking
+                </h3>
+                {bookings.map((booking) => (
+                  <button
+                    key={booking.booking_id}
+                    onClick={() => setSelectedBooking(booking)}
+                    className={`w-full text-left py-2 px-4 rounded-lg mb-2 ${
+                      selectedBooking?.booking_id === booking.booking_id
+                        ? "bg-[#5C1B33] text-white"
+                        : "bg-gray-200 text-gray-700"
+                    }`}
+                  >
+                    {booking.events?.[0]?.event_title || "No Title"}
+                  </button>
+                ))}
+              </div>
             </div>
 
             {/* Chat Section */}
