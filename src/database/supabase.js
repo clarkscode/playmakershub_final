@@ -152,13 +152,15 @@ export const adminCreateEventProcess = async (formData, adminName) => {
     if (updateLogError) throw updateLogError;
 
     // Step 5: Notify the organizer using sendEmail
+    const organizerName = `${formData.firstName} ${formData.lastName}`;
     const emailSubject = "Event Created Successfully!";
     const emailBody = `
-      Dear Organizer,
+      Dear ${organizerName},
       <p>Your booking for the event titled "${formData.title}" has been successfully created!</p>
       <p>Here is your booking ID: <strong>${bookingId}</strong></p>
       <p>Please remember to keep this booking ID safe. You will need it if you want to make clarifications, updates, or cancellations for your booking.</p>
       <p>Best Regards,<br/>The Playmakers Family</p>
+      <a href="https://www.playmakershub.org" target="_blank">www.playmakershub.org</a></p>
     `;
 
     const emailResult = await sendEmail(
@@ -371,98 +373,6 @@ export const retrieveOngoingEvents = async () => {
   }
 };
 
-// export const retrieveOngoingEvents = async () => {
-//   try {
-//     const { data, error } = await supabase
-//       .from("events")
-//       .select(
-//         `
-//         *,
-//         bookings (
-//           organizer_first_name,
-//           organizer_last_name,
-//           organizer_email,
-//           event_location,
-//           event_type_name
-//         ),
-//         musicians_required (
-//           guitarist,
-//           keyboardist,
-//           vocalist,
-//           bassist,
-//           percussionist
-//         ),
-//         participation (
-//           members_orgs (
-//             email,
-//             name,
-//             profile_image
-//           ),
-//           musician_role,
-//           status
-//         )
-//       `
-//       )
-//       .eq("event_status", "Ongoing");
-
-//     if (error) throw error;
-
-//     return data.map((event) => {
-//       const musicianData = event.musicians_required[0] || {};
-
-//       const roles = {
-//         guitarist: {
-//           required: musicianData.guitarist || 0,
-//           participants: [],
-//         },
-//         keyboardist: {
-//           required: musicianData.keyboardist || 0,
-//           participants: [],
-//         },
-//         vocalist: {
-//           required: musicianData.vocalist || 0,
-//           participants: [],
-//         },
-//         bassist: {
-//           required: musicianData.bassist || 0,
-//           participants: [],
-//         },
-//         percussionist: {
-//           required: musicianData.percussionist || 0,
-//           participants: [],
-//         },
-//       };
-
-//       (event.participation || []).forEach((participant) => {
-//         const role = participant.musician_role.toLowerCase();
-//         if (roles[role]) {
-//           roles[role].participants.push({
-//             email: participant.members_orgs.email,
-//             name: participant.members_orgs.name,
-//             profileImage: participant.members_orgs.profile_image,
-//             status: participant.status,
-//           });
-//         }
-//       });
-
-//       const totalMusicians =
-//         roles.guitarist.required +
-//         roles.keyboardist.required +
-//         roles.vocalist.required +
-//         roles.bassist.required +
-//         roles.percussionist.required;
-
-//       return {
-//         ...event,
-//         totalMusicians,
-//         musicians: roles,
-//       };
-//     });
-//   } catch (error) {
-//     console.error("Error fetching ongoing events:", error);
-//     throw error;
-//   }
-// };
 export const retrievePublishedEvents = async () => {
   try {
     const { data, error } = await supabase
@@ -661,24 +571,6 @@ export const fetchPastEvents = async () => {
   }
 };
 
-// unuse
-// export const fetchUserType = async (userId) => {
-//   try {
-//     const { data, error } = await supabase
-//       .from("users")
-//       .select("user_type")
-//       .eq("id", userId)
-//       .single();
-
-//     if (error) throw error;
-
-//     return data?.user_type;
-//   } catch (error) {
-//     console.error("Error fetching user type:", error);
-//     throw error;
-//   }
-// };
-
 export const fetchEvents = async () => {
   try {
     const { data, error } = await supabase
@@ -837,7 +729,7 @@ export const handleParticipation = async (
         user_id: userId,
         event_id: event.event_id,
         musician_role: musicianRole,
-        status: "Pending",
+        status: "participated", // participated or non-participated
       });
     console.log("handleParticipation called with:", {
       userId,
@@ -902,5 +794,24 @@ export const updateEventStatusToPublished = async (eventId) => {
   } catch (err) {
     console.error("Unexpected error:", err);
     return { success: false, message: "Unexpected error occurred." };
+  }
+};
+
+export const insertFeedback = async (feedbackData) => {
+  try {
+    const { data, error } = await supabase
+      .from("event_feedback")
+      .insert([feedbackData]);
+
+    if (error) {
+      console.error("Error inserting feedback:", error);
+      console.log("feedbackData", feedbackData);
+      throw error;
+    }
+
+    return data;
+  } catch (err) {
+    console.error("Unexpected error inserting feedback:", err);
+    throw err;
   }
 };

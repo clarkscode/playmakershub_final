@@ -112,3 +112,20 @@ nav {
     width: 70%;
   }
 }
+
+/* feedback note animation */
+
+@keyframes slide {
+  0% {
+    transform: translateX(100%); /* Start outside the container on the right */
+  }
+  100% {
+    transform: translateX(-100%); /* End outside the container on the left */
+  }
+}
+
+.animate-slide {
+  animation: slide 15s linear infinite; /* Adjust the duration as needed */
+  white-space: nowrap; /* Prevent text wrapping */
+  display: inline-block;
+}

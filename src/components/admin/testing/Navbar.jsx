@@ -2,7 +2,7 @@ import { useState } from "react";
 import { FaBars, FaRegWindowClose } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
 
-const Navbar = ({ isJoinEnabled, onPopupToggle }) => {
+const Navbar = ({ isJoinEnabled, onPopupToggle, isAuthenticated }) => {
   const [nav, setNav] = useState(false);
 
   const navigate = useNavigate();
@@ -29,12 +29,21 @@ const Navbar = ({ isJoinEnabled, onPopupToggle }) => {
         >
           Events
         </button>
-        <button
-          onClick={() => navigate("/")}
-          className="text-[#FFFFFF] text-4xl font-bold"
-        >
-          Playmakers Hub
-        </button>
+        {isAuthenticated ? (
+          <button
+            onClick={() => navigate("/playmakershub")}
+            className="text-[#FFFFFF] text-4xl font-bold"
+          >
+            Playmakers Hub
+          </button>
+        ) : (
+          <button
+            onClick={() => navigate("/")}
+            className="text-[#FFFFFF] text-4xl font-bold"
+          >
+            Playmakers Hub
+          </button>
+        )}
         <button
           onClick={onPopupToggle}
           className="text-[#FFFFFF] text-2xl font-medium hover:text-[#a83c70]"
@@ -59,14 +68,16 @@ const Navbar = ({ isJoinEnabled, onPopupToggle }) => {
       </nav>
 
       {/* Login button aligned to the right */}
-      <div className="flex-1 flex justify-end">
-        <button
-          onClick={() => navigate("/member/login")}
-          className="font-poppins px-6 py-2 bg-[#992d5e] text-[#ffffff] text-md font-bold hover:bg-[#a83c70] rounded-full"
-        >
-          Login
-        </button>
-      </div>
+      {isAuthenticated ? null : (
+        <div className="flex-1 flex justify-end">
+          <button
+            onClick={() => navigate("/member/login")}
+            className="font-poppins px-6 py-2 bg-[#992d5e] text-[#ffffff] text-md font-bold hover:bg-[#a83c70] rounded-full"
+          >
+            Login
+          </button>
+        </div>
+      )}
 
       {/* For responsive Navigation Bar */}
       <div onClick={handleNav} className="p-4 block md:hidden">

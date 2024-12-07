@@ -353,20 +353,6 @@ const AuthenticatedHeader = () => {
       console.log("Participations this month:", participations);
       console.log("Backout count:", backoutCount);
 
-      // Determine status based on the rules
-      // let newStatus;
-      // if (backoutCount >= 2) {
-      //   newStatus = "probationary"; // User with 2 or more backouts is probationary
-      // } else if (backoutCount === 1) {
-      //   if (participationsPerMonth >= 2) {
-      //     newStatus = "active"; // 1 backout but participated in 2+ events
-      //   } else {
-      //     newStatus = "inactive"; // 1 backout with less than 2 participations
-      //   }
-      // } else {
-      //   newStatus = "active"; // Default to active if no backouts and no participation
-      // }
-
       let newStatus;
       if (backoutCount >= 2) {
         newStatus = "probationary"; // 2 or more backouts → probationary

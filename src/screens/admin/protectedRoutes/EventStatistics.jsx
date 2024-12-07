@@ -38,6 +38,8 @@ const EventStatistics = () => {
   const [eventDistributionData, setEventDistributionData] = useState(null); // Event Distribution (Pie Chart)
   const [participantsChartData, setParticipantsChartData] = useState(null); // Participants per Event
   const [eventDurationChartData, setEventDurationChartData] = useState(null); // Event Duration
+  const [feedbackChartData, setFeedbackChartData] = useState(null); // Feedback Ratings
+  const [feedbackSentimentData, setFeedbackSentimentData] = useState(null); // Feedback Sentiment
 
   // Loading and Error states
   const [isLoading, setIsLoading] = useState(true);
@@ -80,6 +82,25 @@ const EventStatistics = () => {
       }
     };
 
+    const fetchFeedbackData = async () => {
+      try {
+        const { data: feedbackData, error: feedbackError } = await supabase
+          .from("event_feedback")
+          .select("*");
+
+        if (feedbackError) {
+          throw new Error(feedbackError.message);
+        }
+
+        processFeedbackChartData(feedbackData); // Process feedback data
+        processFeedbackSentiment(feedbackData); // Process feedback sentiment
+      } catch (err) {
+        setError(err.message || "Failed to fetch feedback data.");
+      }
+    };
+
+    fetchFeedbackData();
+
     fetchEventData();
   }, []);
 
@@ -116,6 +137,75 @@ const EventStatistics = () => {
           backgroundColor: "rgba(75, 192, 192, 0.6)",
           borderColor: "rgba(75, 192, 192, 1)",
           borderWidth: 1,
+        },
+      ],
+    });
+  };
+
+  const processFeedbackChartData = (feedbackData) => {
+    const categories = [
+      "effort_rating",
+      "quality_rating",
+      "communication_rating",
+      "technicality_rating",
+      "overall_rating",
+    ];
+    const categoryAverages = categories.map((category) => {
+      const total = feedbackData.reduce(
+        (sum, feedback) => sum + feedback[category],
+        0
+      );
+      return (total / feedbackData.length).toFixed(2); // Average rating
+    });
+
+    setFeedbackChartData({
+      labels: ["Effort", "Quality", "Communication", "Technicality", "Overall"],
+      datasets: [
+        {
+          label: "Average Ratings",
+          data: categoryAverages,
+          backgroundColor: [
+            "#FF6384",
+            "#36A2EB",
+            "#FFCE56",
+            "#4BC0C0",
+            "#9966FF",
+          ],
+          borderColor: ["#FF6384", "#36A2EB", "#FFCE56", "#4BC0C0", "#9966FF"],
+          borderWidth: 1,
+        },
+      ],
+    });
+  };
+
+  const processFeedbackSentiment = (feedbackData) => {
+    const sentimentCounts = { positive: 0, neutral: 0, negative: 0 };
+
+    feedbackData.forEach((feedback) => {
+      const avgRating =
+        (feedback.effort_rating +
+          feedback.quality_rating +
+          feedback.communication_rating +
+          feedback.technicality_rating +
+          feedback.overall_rating) /
+        5;
+
+      if (avgRating >= 4) sentimentCounts.positive += 1;
+      else if (avgRating === 3) sentimentCounts.neutral += 1;
+      else sentimentCounts.negative += 1;
+    });
+
+    setFeedbackSentimentData({
+      labels: ["Positive", "Neutral", "Negative"],
+      datasets: [
+        {
+          label: "Feedback Sentiment",
+          data: [
+            sentimentCounts.positive,
+            sentimentCounts.neutral,
+            sentimentCounts.negative,
+          ],
+          backgroundColor: ["#36A2EB", "#FFCE56", "#FF6384"],
         },
       ],
     });
@@ -268,6 +358,16 @@ const EventStatistics = () => {
             {/* Event Duration */}
             <ChartContainer title="Event Duration (in Hours)">
               <Line data={eventDurationChartData} />
+            </ChartContainer>
+
+            {/* Feedback Ratings */}
+            <ChartContainer title="Average Feedback Ratings">
+              <Bar data={feedbackChartData} />
+            </ChartContainer>
+
+            {/* Feedback Sentiment */}
+            <ChartContainer title="Feedback Sentiment">
+              <Doughnut data={feedbackSentimentData} />
             </ChartContainer>
           </div>
         )}

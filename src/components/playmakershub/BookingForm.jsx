@@ -1,6 +1,8 @@
 import ReCAPTCHA from "react-google-recaptcha";
 import { useEffect, useState } from "react";
-import { supabase } from "../../database/supabase";
+import { insertFeedback, supabase } from "../../database/supabase";
+import EventFeedback from "../admin/Reusable/EventFeedback";
+import { toast } from "react-toastify";
 
 const BookingForm = ({
   formData,
@@ -25,6 +27,16 @@ const BookingForm = ({
   const [newMessage, setNewMessage] = useState("");
   const [isBookingPending, setIsBookingPending] = useState(false);
   const [isChatResolved, setIsChatResolved] = useState(false);
+  const [isFeedbackSubmitted, setIsFeedbackSubmitted] = useState(false);
+  const [eventID, setEventID] = useState(null); // State for event ID
+  const [showFeedbackModal, setShowFeedbackModal] = useState(false);
+
+  // isOngoing
+  const isPublished = status === "Published";
+
+  const toggleFeedbackModal = () => {
+    setShowFeedbackModal(!showFeedbackModal);
+  };
 
   const isDisabled = isViewMode;
   const toggleBookingIDPopup = () => {
@@ -37,10 +49,11 @@ const BookingForm = ({
     return "Book Event";
   };
 
-  const buttonStyle =
-    (isEditMode && !captchaVerified) || !isMusiciansValid
-      ? "bg-gray-400 text-gray-200 cursor-not-allowed"
-      : "bg-[#b70039] text-white cursor-pointer";
+  const buttonStyle = isViewMode
+    ? "bg-[#b70039] text-white cursor-pointer" // Enabled style for "Close" in view mode
+    : (isEditMode && !captchaVerified) || !isMusiciansValid
+    ? "bg-gray-400 text-gray-200 cursor-not-allowed" // Disabled style
+    : "bg-[#b70039] text-white cursor-pointer"; // Enabled style for other modes
 
   // Define styles for each status type
   const statusStyles = {
@@ -83,6 +96,7 @@ const BookingForm = ({
 
   const handleSendMessage = async () => {
     const bookingID = enteredBookingID;
+
     if (newMessage.trim() && bookingID && isBookingPending) {
       const { error } = await supabase.from("chats").insert([
         {
@@ -136,6 +150,52 @@ const BookingForm = ({
       });
     }
   }, [isEditMode, enteredBookingID, isBookingPending]);
+
+  // Fetch the event ID based on the entered booking ID
+  useEffect(() => {
+    const fetchEventID = async () => {
+      if (enteredBookingID) {
+        try {
+          const { data, error } = await supabase
+            .from("events")
+            .select("event_id")
+            .eq("booking_id", enteredBookingID)
+            .single();
+
+          if (error) {
+            console.error("Error fetching event ID:", error);
+          } else {
+            setEventID(data?.event_id);
+          }
+        } catch (err) {
+          console.error("Unexpected error fetching event ID:", err);
+        }
+      }
+    };
+
+    fetchEventID();
+  }, [enteredBookingID]); // Dependency array ensures this runs when enteredBookingID changes
+
+  // Fetch feedback submission status from the event_feedback table
+  useEffect(() => {
+    const checkFeedbackExists = async () => {
+      const { data, error } = await supabase
+        .from("event_feedback")
+        .select("*")
+        .eq("event_id", eventID);
+
+      if (error) {
+        console.error("Error checking feedback:", error);
+      } else {
+        // If feedback exists, set isFeedbackSubmitted to true
+        setIsFeedbackSubmitted(data.length > 0);
+      }
+    };
+
+    if (eventID) {
+      checkFeedbackExists();
+    }
+  }, [eventID]);
   return (
     <div
       className="bg-[#36303C] p-8 rounded-lg shadow-lg w-2/4 h-4/5 overflow-y-scroll"
@@ -168,6 +228,77 @@ const BookingForm = ({
           </div>
         )}
       </div>
+      {/* Feedback Button */}
+      {isPublished && !isFeedbackSubmitted && (
+        <button
+          onClick={toggleFeedbackModal}
+          className="bg-[#A83C70] text-white mb-3 py-2 px-4 rounded-sm hover:bg-[#8e325b] transition"
+        >
+          Feedback
+        </button>
+      )}
+      {/*  Note for organizer para mag feedback ang animal */}
+      {isPublished && !isFeedbackSubmitted && (
+        <div className="relative overflow-hidden rounded-sm">
+          <div className="animate-slide text-white text-sm bg-[#5C1B33] px-4 py-2 rounded-sm shadow-lg">
+            Dear {formData.firstName} {formData.lastName} , if you have a
+            moment, we would love your feedback on the Playmakers team. Your
+            insights help us grow and improve. Thank you!
+          </div>
+        </div>
+      )}
+
+      {isPublished && isFeedbackSubmitted && (
+        <div className="mt-2 text-sm bg-[#5C1B33] text-white py-2 px-4 rounded-sm mb-4">
+          Thank you for providing your feedback for Playmakers!
+        </div>
+      )}
+      {/* Feedback Modal */}
+      {showFeedbackModal && (
+        <div className="fixed inset-0 bg-gray-800 bg-opacity-50 flex justify-center items-center z-50">
+          <div className="bg-white rounded-lg shadow-lg w-full max-w-2xl h-[calc(100vh-4rem)] overflow-y-auto">
+            <button
+              onClick={toggleFeedbackModal}
+              className="absolute top-4 right-4 text-gray-500 hover:text-gray-700"
+            >
+              ❌
+            </button>
+            <EventFeedback
+              onSubmitFeedback={async (feedback) => {
+                console.log("Feedback submitted:", feedback);
+
+                try {
+                  // Prepare the feedback data
+                  const feedbackData = {
+                    event_id: eventID,
+                    effort_rating: feedback.effort,
+                    quality_rating: feedback.quality,
+                    communication_rating: feedback.communication,
+                    technicality_rating: feedback.technicality,
+                    overall_rating: feedback.overall,
+                    additional_comments: feedback.comments,
+                    submitted_by: `${formData.firstName} ${formData.lastName}`, // Organizer's name
+                  };
+
+                  // Save feedback to the database
+                  await insertFeedback(feedbackData);
+
+                  // Show a success message
+                  toast.success("Feedback submitted successfully!");
+                  setIsFeedbackSubmitted(true);
+                  // console.log("Feedback successfully saved!");
+
+                  // Close the feedback modal
+                  toggleFeedbackModal();
+                } catch (error) {
+                  toast.error("Failed to submit feedback. Please try again.");
+                  console.error("Error submitting feedback:", error);
+                }
+              }}
+            />
+          </div>
+        </div>
+      )}
 
       {bookingIDPopupVisible && (
         <div className="fixed inset-0 bg-gray-800 bg-opacity-50 flex justify-center items-center z-50">
@@ -642,10 +773,11 @@ const BookingForm = ({
           <div className="mb-6">
             <ReCAPTCHA
               // test
-              // sitekey="6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI"
+              sitekey="6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI"
               // production
-              sitekey="6Ld7-ZMqAAAAAF7YrZhOzjlo4htz7PbAuT7MiJgo"
+              // sitekey="6Ld7-ZMqAAAAAF7YrZhOzjlo4htz7PbAuT7MiJgo"
               onChange={handleCaptchaVerify}
+              aria-label="CAPTCHA verification"
             />
           </div>
         )}
@@ -656,10 +788,13 @@ const BookingForm = ({
             // className="w-full bg-[#b70039] text-white py-2 rounded-lg cursor-pointer"
             className={`w-full py-2 rounded-lg ${buttonStyle}`}
             disabled={
-              // (isEditMode && !captchaVerified) || (isDisabled && !isViewMode)
-              (isEditMode && !captchaVerified) || // CAPTCHA verification for edit mode
-              (isDisabled && !isViewMode) || // Read-only form restriction
-              !isMusiciansValid // At least one musician validation
+              // (isEditMode && !captchaVerified) || // CAPTCHA verification for edit mode
+              // (isDisabled && !isViewMode) || // Read-only form restriction
+              // !isMusiciansValid // At least one musician validation
+
+              isViewMode
+                ? false // Always enable in view mode
+                : (isEditMode && !captchaVerified) || !isMusiciansValid
             }
           >
             {isViewMode ? "Close" : isEditMode ? "Save Changes" : "Submit"}

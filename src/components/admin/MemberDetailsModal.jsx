@@ -108,7 +108,12 @@ const MemberDetailsModal = ({ member, onClose, onUpdate, onDelete }) => {
     if (member.status === "inactive" || member.status === "probationary") {
       const reminderMessage = {
         email: member.email,
-        message: "You must participate in events to remain active.",
+        message: `<p>Dear ${member.name},</p>
+        <p>We noticed that your current status is <strong>${member.status}</strong>.</p>
+        <p>Please take a moment to check our upcoming events and make a plan to participate.</p>
+        <p>If you have any questions or need assistance, feel free to contact us.</p>
+        <p>Best Regards,<br/>The Playmakers Family</p>
+        <a href="https://www.communityhub.org" target="_blank">www.communityhub.org</a>`,
       };
 
       console.log("Reminder message", reminderMessage);

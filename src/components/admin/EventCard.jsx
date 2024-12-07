@@ -67,6 +67,33 @@ const EventCard = ({
     eventEnd.time
   );
 
+  // Helper to fetch organizer's full name
+  const fetchOrganizerName = async (eventId) => {
+    try {
+      const { data: organizerData, error } = await supabase
+        .from("events")
+        .select("bookings(organizer_first_name, organizer_last_name)")
+        .eq("event_id", eventId)
+        .single();
+
+      if (error) {
+        console.error("Error fetching organizer's name:", error);
+        throw new Error("Failed to fetch organizer's name");
+      }
+
+      if (!organizerData || !organizerData.bookings) {
+        throw new Error("Organizer details not found");
+      }
+
+      const { organizer_first_name, organizer_last_name } =
+        organizerData.bookings;
+      return `${organizer_first_name} ${organizer_last_name}`;
+    } catch (err) {
+      console.error(err.message);
+      throw err;
+    }
+  };
+
   // Function to handle accepting an event
   const handleAcceptEvent = async (eventId, organizerEmail, eventTitle) => {
     try {
@@ -91,16 +118,20 @@ const EventCard = ({
 
       if (updatesError) throw updatesError;
 
+      const organizerFullname = await fetchOrganizerName(eventId);
+
       // Send email notification to the organizer
       await sendEmail(
         organizerEmail,
         `Your event "${eventTitle}" has been accepted!`,
-        `<p>Dear Organizer,</p>
+        `<p>Dear ${organizerFullname},</p>
          <p>Your event "<strong>${eventTitle}</strong>" has been accepted by Playmakers Admin.</p>
          <p>For more details, visit your <strong>Previous Booking</strong> located at the top right corner of the booking form.</p>
          <p>Thank you for reaching out to Playmakers - USTP!</p>
          <p>Best Regards, 
-         <br/>The Playmakers Family</p>`
+         <br/>The Playmakers Family</p>
+         <a href="https://www.playmakershub.org" target="_blank">www.playmakershub.org</a></p>
+         `
       );
 
       alert("Event accepted successfully and the organizer has been notified!");
@@ -139,10 +170,12 @@ const EventCard = ({
 
       if (error) throw error;
 
+      const organizerFullname = await fetchOrganizerName(eventId);
+
       await sendEmail(
         organizerEmail,
         `Your event "${eventTitle}" has been rejected`,
-        `<p>Dear Organizer,</p><p>Unfortunately, your event "<strong>${eventTitle}</strong>" has been rejected by Playmakers Admin. Please contact us for more details.</p><p>Best regards,<br/>Playmakers Admin</p>`
+        `<p>Dear ${organizerFullname},</p><p>Unfortunately, your event "<strong>${eventTitle}</strong>" has been rejected by Playmakers Admin. Please contact us for more details.</p><p>Best regards,<br/>Playmakers Admin</p>`
       );
 
       alert("Event rejected successfully and the organizer has been notified!");
@@ -281,7 +314,9 @@ const EventCard = ({
          <p>You are invited to participate in the event "<strong>${eventTitle}</strong>"!</p>
          <p>For more details, visit Playmakers Hub.</p>
          <p>Thank you for reaching out to Playmakers - USTP!</p>
-         <p>Best regards,<br/>The Playmakers Family</p>`
+         <p>Best regards,<br/>The Playmakers Family</p>
+         <a href="https://www.playmakershub.org" target="_blank">www.playmakershub.org</a></p>
+         `
         );
 
         // Send in-app (web) notification
@@ -337,35 +372,12 @@ const EventCard = ({
       const result = await updateEventStatusToPublished(eventId);
 
       if (result.success) {
-        // Step 2: Fetch the event and organizer details
-        const { data: eventData, error } = await supabase
-          .from("events")
-          .select(
-            "event_title, bookings(organizer_email, organizer_first_name, organizer_last_name)"
-          )
-          .eq("event_id", eventId)
-          .single();
-
-        if (error || !eventData) {
-          console.error(
-            "Error fetching event data:",
-            error || "No event found"
-          );
-          alert("Failed to fetch event details for email notification.");
-          return;
-        }
-
-        const { event_title: eventTitle, bookings } = eventData;
-        if (eventData) {
-          console.log("bookings data", bookings);
-        }
-        const organizerEmail = bookings.organizer_email;
-        const organizerName = `${bookings.organizer_first_name} ${bookings.organizer_last_name}`;
+        const organizerFullname = await fetchOrganizerName(eventId);
 
         // Step 3: Prepare and send the email notification
         const subject = `Your event "${eventTitle}" has been published!`;
         const content = `
-        <p>Dear ${organizerName},</p>
+        <p>Dear ${organizerFullname},</p>
         <p>Your booked event "<strong>${eventTitle}</strong>" has now been reviewed and published by Playmakers Administrators.</p>
         <p>You can now view your booked event with its fellow participants at the following link: 
         <a href="https://www.playmakershub.org/homepage/events/published" target="_blank">https://www.playmakershub.org/homepage/events/published</a></p>
@@ -374,7 +386,7 @@ const EventCard = ({
         <a href="https://www.playmakershub.org" target="_blank">www.playmakershub.org</a></p>
       `;
 
-        const emailResponse = await sendEmail(organizerEmail, subject, content);
+        const emailResponse = await sendEmail(email, subject, content);
 
         if (emailResponse.error) {
           console.error("Failed to send email:", emailResponse.error);
@@ -517,7 +529,11 @@ const EventCard = ({
         )}
 
         {/* Dropdown and Save Button for Ongoing Events */}
-        {isOngoing && (
+        {/* 
+        ✅ayha ra mo display ang participation filter sa ongoing events pag dili pa full ang participants, pero pag full na dili mo display ang participation filter
+        
+         */}
+        {isOngoing && participants < maxParticipants && (
           <div className="mb-4">
             <label className="block font-semibold mb-2">
               Participation Filter

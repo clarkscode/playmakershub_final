@@ -24,6 +24,7 @@ const Homepage = () => {
   const [isEditMode, setIsEditMode] = useState(false);
   const [isViewMode, setIsViewMode] = useState(false);
   const [bookingStatus, setBookingStatus] = useState("Pending");
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
 
   const navigate = useNavigate();
   const modalRef = useRef(null);
@@ -63,6 +64,24 @@ const Homepage = () => {
     }
   };
 
+  const checkIsUserAuthenticated = async () => {
+    try {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      setIsAuthenticated(!!session);
+      // console.log("Homepage - user has session", session);
+    } catch (error) {
+      console.error("Error checking user authentication:", error.message);
+      toast.error("Failed to check authentication status.");
+    }
+  };
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData((prevData) => ({ ...prevData, [name]: value }));
+  };
+
   useEffect(() => {
     const fetchJoinStatus = async () => {
       try {
@@ -82,12 +101,8 @@ const Homepage = () => {
     };
 
     fetchJoinStatus();
+    checkIsUserAuthenticated();
   }, []);
-
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData((prevData) => ({ ...prevData, [name]: value }));
-  };
 
   // Function to fetch and set booking status
   const fetchAndSetBookingStatus = async (bookingID) => {
@@ -139,13 +154,17 @@ const Homepage = () => {
       const bookingID = result.bookingData[0].booking_id;
       setBookingID(bookingID);
 
+      //organizer's full name dynamically
+      const organizerName = `${formData.firstName} ${formData.lastName}`;
+
       // email content
       const emailContent = `
-          <p>Dear Organizer,</p>
+          <p>Dear ${organizerName},</p>
           <p>Your booking for the event titled "${formData.title}" has been successfully created!</p>
           <p>Here is your booking ID: <strong>${bookingID}</strong></p>
           <p>Please remember to keep this booking ID safe. You will need it if you want to make clarifications, updates, or cancellations for your booking.</p>
           <p>Best Regards,<br/>The Playmakers Family</p>
+          <a href="https://www.playmakershub.org" target="_blank">www.playmakershub.org</a></p>
         `;
 
       // send the booking id to organizer
@@ -187,6 +206,9 @@ const Homepage = () => {
         setIsViewMode(!isEditable);
         // Fetch and set the booking status
         await fetchAndSetBookingStatus(enteredBookingID);
+
+        console.log("FETCHED DATA", data.events[0].event_id);
+
         // Extracting and organizing fetched data into the formData structure
         setFetchedData({
           organizerFirstName: data.organizer_first_name,
@@ -223,7 +245,7 @@ const Homepage = () => {
       }
     } catch (error) {
       toast.error("Booking doesnt exist.");
-      // console.error("Error fetching booking data:", error);
+      console.error("handleBookingIDSubmit", error);
     }
   };
 
@@ -329,7 +351,7 @@ const Homepage = () => {
 
   useEffect(() => {
     if (fetchedData) {
-      console.log("fetch booking data", fetchedData);
+      // console.log("fetch booking data", fetchedData);
       setFormData({
         firstName: fetchedData.organizerFirstName,
         lastName: fetchedData.organizerLastName,
@@ -357,7 +379,11 @@ const Homepage = () => {
 
   return (
     <div className="bg-Radial h-screen bg-[#000000]">
-      <Navbar isJoinEnabled={isJoinEnabled} onPopupToggle={togglePopup} />
+      <Navbar
+        isJoinEnabled={isJoinEnabled}
+        onPopupToggle={togglePopup}
+        isAuthenticated={isAuthenticated}
+      />
 
       <main className="flex justify-center items-center">
         <div className="Content flex flex-col md:flex-row md:justify-between px-4 md:px-10">

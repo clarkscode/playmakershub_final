@@ -230,7 +230,9 @@ const MemberOrganization = () => {
         const content = `Hello ${member.name},<br/><br/>
         This is to inform you that your account status has been updated to <b>${updatedData.status}</b>.
         <br/><br/>If you have any questions, please contact playmakers admin.<br/><br/>
-        <p>Best regards,<br/>The Playmakers Family</p>`;
+        <p>Best regards,<br/>The Playmakers Family</p>
+        <a href="https://www.playmakershub.org" target="_blank">www.playmakershub.org</a></p>
+        `;
 
         const emailResponse = await sendEmail(recipientEmail, subject, content);
         console.log(emailResponse);

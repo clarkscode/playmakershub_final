@@ -23,6 +23,8 @@ const UnauthNavbar = () => {
   const [isEditMode, setIsEditMode] = useState(false);
   const [isViewMode, setIsViewMode] = useState(false);
   const [bookingStatus, setBookingStatus] = useState("Pending");
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+
   const modalRef = useRef(null);
 
   const [formData, setFormData] = useState({
@@ -60,27 +62,6 @@ const UnauthNavbar = () => {
     }
   };
 
-  useEffect(() => {
-    const fetchJoinStatus = async () => {
-      try {
-        const { data, error } = await supabase
-          .from("join")
-          .select("isOpen")
-          .single();
-
-        if (error) {
-          console.error("Error fetching join status:", error.message);
-        } else {
-          setIsJoinEnabled(data?.isOpen);
-        }
-      } catch (err) {
-        console.error("Unexpected error fetching join status:", err.message);
-      }
-    };
-
-    fetchJoinStatus();
-  }, []);
-
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prevData) => ({ ...prevData, [name]: value }));
@@ -99,6 +80,19 @@ const UnauthNavbar = () => {
 
   const handleCaptchaVerify = (value) => {
     setCaptchaVerified(!!value);
+  };
+
+  const checkIsUserAuthenticated = async () => {
+    try {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      setIsAuthenticated(!!session);
+      // console.log("UnauthNavbar - user has session", session);
+    } catch (error) {
+      console.error("Error checking user authentication:", error.message);
+      toast.error("Failed to check authentication status.");
+    }
   };
 
   const handleSubmit = async (e) => {
@@ -123,13 +117,17 @@ const UnauthNavbar = () => {
       const bookingID = result.bookingData[0].booking_id;
       setBookingID(bookingID);
 
+      // organizer's full name dynamically
+      const organizerName = `${formData.firstName} ${formData.lastName}`;
+
       // email content
       const emailContent = `
-          <p>Dear Organizer,</p>
+          <p>Dear ${organizerName},</p>
           <p>Your booking for the event titled "${formData.title}" has been successfully created!</p>
           <p>Here is your booking ID: <strong>${bookingID}</strong></p>
           <p>Please remember to keep this booking ID safe. You will need it if you want to make clarifications, updates, or cancellations for your booking.</p>
           <p>Best Regards,<br/>The Playmakers Family</p>
+          <a href="https://www.playmakershub.org" target="_blank">www.playmakershub.org</a></p>
         `;
 
       // send the booking id to organizer
@@ -298,6 +296,28 @@ const UnauthNavbar = () => {
   };
 
   useEffect(() => {
+    const fetchJoinStatus = async () => {
+      try {
+        const { data, error } = await supabase
+          .from("join")
+          .select("isOpen")
+          .single();
+
+        if (error) {
+          console.error("Error fetching join status:", error.message);
+        } else {
+          setIsJoinEnabled(data?.isOpen);
+        }
+      } catch (err) {
+        console.error("Unexpected error fetching join status:", err.message);
+      }
+    };
+
+    fetchJoinStatus();
+    checkIsUserAuthenticated();
+  }, []);
+
+  useEffect(() => {
     if (popupVisible) {
       document.addEventListener("mousedown", handleOutsideClick);
       document.addEventListener("keydown", handleEscKey);
@@ -314,7 +334,7 @@ const UnauthNavbar = () => {
 
   useEffect(() => {
     if (fetchedData) {
-      console.log("fetch booking data", fetchedData);
+      // console.log("fetch booking data", fetchedData);
       setFormData({
         firstName: fetchedData.organizerFirstName,
         lastName: fetchedData.organizerLastName,
@@ -342,7 +362,11 @@ const UnauthNavbar = () => {
 
   return (
     <div>
-      <Navbar isJoinEnabled={isJoinEnabled} onPopupToggle={togglePopup} />
+      <Navbar
+        isJoinEnabled={isJoinEnabled}
+        onPopupToggle={togglePopup}
+        isAuthenticated={isAuthenticated}
+      />
 
       <main>
         {popupVisible && (
