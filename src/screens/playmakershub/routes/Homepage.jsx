@@ -79,6 +79,31 @@ const Homepage = () => {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
+
+    // Ensure the input time is valid
+    const validateFutureTime = (fieldName, value) => {
+      const today = new Date();
+      const [hours, minutes] = value.split(":").map(Number);
+      const inputTime = new Date();
+      inputTime.setHours(hours, minutes, 0, 0);
+
+      if (inputTime <= today) {
+        toast.error(
+          `${fieldName} cannot be in the past. Please select a future time.`
+        );
+        return false;
+      }
+      return true;
+    };
+
+    if (name === "startTime" || name === "endTime") {
+      const isValid = validateFutureTime(
+        name === "startTime" ? "Start Time" : "End Time",
+        value
+      );
+      if (!isValid) return;
+    }
+
     setFormData((prevData) => ({ ...prevData, [name]: value }));
   };
 
@@ -131,11 +156,11 @@ const Homepage = () => {
     e.preventDefault();
 
     // Email domain validation
-    // const emailDomain = formData.email.split("@")[1];
-    // if (emailDomain !== "ustp.edu.ph") {
-    //   toast.error("You are not allowed to book.");
-    //   return;
-    // }
+    const emailDomain = formData.email.split("@")[1];
+    if (emailDomain !== "ustp.edu.ph") {
+      toast.error("You are not allowed to book.");
+      return;
+    }
 
     // Check if CAPTCHA is verified
     if (!captchaVerified) {

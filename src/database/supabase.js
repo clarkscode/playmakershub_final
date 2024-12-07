@@ -20,7 +20,6 @@ export const createBookingProcess = async (formData) => {
           event_location: formData.location,
           event_type: formData.eventType,
           event_type_name: formData.eventTypeName,
-          date_created: new Date(),
         },
       ])
       .select();
@@ -44,7 +43,6 @@ export const createBookingProcess = async (formData) => {
           theme: formData.theme,
           description: formData.description,
           event_status: "Pending",
-          date_created: new Date(),
         },
       ])
       .select();
@@ -90,7 +88,6 @@ export const adminCreateEventProcess = async (formData, adminName) => {
           event_location: formData.location,
           event_type: formData.eventType,
           event_type_name: formData.eventTypeName,
-          date_created: new Date(),
         },
       ])
       .select();
@@ -114,7 +111,6 @@ export const adminCreateEventProcess = async (formData, adminName) => {
           theme: formData.theme,
           description: formData.description,
           event_status: "Accepted", // Directly accepted by admin
-          date_created: new Date(),
         },
       ])
       .select();
@@ -145,7 +141,6 @@ export const adminCreateEventProcess = async (formData, adminName) => {
       {
         update_type: "Added new events",
         updated_by: adminName,
-        date_time: new Date().toISOString(),
       },
     ]);
 

@@ -400,6 +400,7 @@ const CreateEventModal = ({ isOpen, onClose }) => {
               <input
                 type="date"
                 name="endDate"
+                min={formData.startDate || today}
                 value={formData.endDate}
                 onChange={handleChange}
                 className="w-full border border-gray-300 rounded-lg p-2 mt-1"
@@ -545,6 +546,9 @@ const CreateEventModal = ({ isOpen, onClose }) => {
           {canSubmit && (
             <div className="mb-6">
               <ReCAPTCHA
+                // test
+                // sitekey="6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI"
+                // production
                 sitekey="6Ld7-ZMqAAAAAF7YrZhOzjlo4htz7PbAuT7MiJgo"
                 onChange={handleCaptchaVerify}
               />

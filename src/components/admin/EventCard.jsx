@@ -111,8 +111,7 @@ const EventCard = ({
       const { error: updatesError } = await supabase.from("updates").insert([
         {
           update_type: `Added new events`,
-          updated_by: adminName, // Replace with dynamic admin name if available
-          date_time: new Date().toISOString(),
+          updated_by: adminName,
         },
       ]);
 

@@ -112,7 +112,6 @@ const AdminProfile = () => {
       const updateLog = {
         update_type: "Profile Update",
         updated_by: adminName,
-        date_time: new Date().toISOString(),
       };
 
       const { error: logError } = await supabase
