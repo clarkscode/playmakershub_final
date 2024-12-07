@@ -53,9 +53,7 @@ const AdminLogin = () => {
 
         // Deny access if neither admin nor super admin
         if (!isAdmin && !isSuperAdmin) {
-          setError(
-            "Access denied: You do not have admin or super admin privileges."
-          );
+          setError("Access denied: You do not have  privileges.");
           return;
         }
 
