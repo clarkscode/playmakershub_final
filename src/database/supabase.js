@@ -3,9 +3,7 @@ import sendEmail from "./sendEmail";
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseKey = import.meta.env.VITE_SUPABASE_KEY;
-const supabaseAdminKey = import.meta.env.VITE_SUPABASE_ADMIN;
 export const supabase = createClient(supabaseUrl, supabaseKey);
-export const supabaseAdmin = createClient(supabaseUrl, supabaseAdminKey);
 
 export const createBookingProcess = async (formData) => {
   try {

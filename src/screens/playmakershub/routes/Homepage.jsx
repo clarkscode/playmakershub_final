@@ -12,6 +12,8 @@ import BookingForm from "../../../components/playmakershub/BookingForm";
 import { FaInfoCircle } from "react-icons/fa";
 import sendEmail from "../../../database/sendEmail";
 import Navbar from "../../../components/admin/testing/Navbar";
+import { supabaseAdmin } from "../../../database/supabaseAdmin";
+import sendEmailTwo from "../../../database/sendEmailTwo";
 
 const Homepage = () => {
   const [popupVisible, setPopupVisible] = useState(false);
@@ -87,13 +89,68 @@ const Homepage = () => {
     }
   };
 
+  const notifyAdmins = async (eventName) => {
+    try {
+      // Step 1: Fetch all admin users based on their roles from authentication
+      const { data, error } = await supabaseAdmin.auth.admin.listUsers();
+
+      if (error) {
+        console.error("Error fetching all admins", error);
+        throw new Error("Failed to fetch users.");
+      }
+
+      // Step 2: Organize users by roles
+      const roleMapping = {
+        President: [],
+        "Vice President (Internal)": [],
+        "Vice President (External)": [],
+      };
+
+      data.users.forEach((user) => {
+        const role = user.user_metadata?.role;
+        if (role && roleMapping[role] !== undefined) {
+          roleMapping[role].push({
+            name: `${user.user_metadata?.first_name || "N/A"} ${
+              user.user_metadata?.last_name || "N/A"
+            }`,
+            email: user.email,
+          });
+        }
+      });
+
+      // Step 3: Send personalized emails for each role
+      const emailPromises = Object.entries(roleMapping).flatMap(
+        ([role, users]) =>
+          users.map((user) => {
+            const subject = "New Booking Request Received";
+            const content = `
+          <p>Greetings ${role}: ${user.name},</p>
+          <p>A booking request titled "<strong>${eventName}</strong>" has been received. <a href="https://www.playmakershub.org/adminonly" target="_blank">here</a></p></p>
+          <p>Kindly visit your admin page's pending events to review the details.</p>
+         <p>Best Regards,<br/>The Playmakers Family</p>
+          <a href="https://www.playmakershub.org" target="_blank">www.playmakershub.org</a></p>
+        `;
+            // Send email to the admin
+            return sendEmailTwo(user.email, subject, content);
+          })
+      );
+
+      // Await all email sending
+      await Promise.all(emailPromises);
+
+      console.log("Emails sent successfully to all admins.");
+    } catch (error) {
+      console.error("Error notifying admins:", error);
+    }
+  };
+
   const checkIsUserAuthenticated = async () => {
     try {
       const {
         data: { session },
       } = await supabase.auth.getSession();
       setIsAuthenticated(!!session);
-      // console.log("Homepage - user has session", session);
+      console.log("Homepage - user has session", session);
     } catch (error) {
       console.error("Error checking user authentication:", error.message);
       toast.error("Failed to check authentication status.");
@@ -123,7 +180,6 @@ const Homepage = () => {
         console.error("Unexpected error fetching join status:", err.message);
       }
     };
-
     fetchJoinStatus();
     checkIsUserAuthenticated();
   }, []);
@@ -260,6 +316,7 @@ const Homepage = () => {
       // Reset form fields
       setFormData(initialFormData);
       toast.success("Booked successfully!");
+      notifyAdmins(formData.title);
       // console.log("Booking Result:", result);
     } catch (error) {
       toast.error("Failed to complete the booking process.");

@@ -1,10 +1,10 @@
 import axios from "axios";
 
-const sendEmail = async (recipientEmail, subject, content) => {
-  const apiKey = import.meta.env.VITE_BREVO_API_KEY;
+const sendEmailTwo = async (recipientEmail, subject, content) => {
+  const apiKey = import.meta.env.VITE_BREVO_API_KEY_ADMIN;
 
   const data = {
-    sender: { email: "admin@playmakers.com", name: "Playmakershub" },
+    sender: { email: "no-reply@playmakershub.org", name: "Playmakershub" },
     to: [{ email: recipientEmail }],
     subject: subject,
     htmlContent: `<p>${content}</p>`,
@@ -30,4 +30,4 @@ const sendEmail = async (recipientEmail, subject, content) => {
   }
 };
 
-export default sendEmail;
+export default sendEmailTwo;

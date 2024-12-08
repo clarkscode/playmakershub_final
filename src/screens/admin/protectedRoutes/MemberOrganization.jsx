@@ -9,7 +9,6 @@ import {
   deleteMember,
   fetchMembers,
   supabase,
-  supabaseAdmin,
   updateMember,
 } from "../../../database/supabase";
 import { toast } from "react-toastify";
@@ -17,6 +16,7 @@ import sendEmail from "../../../database/sendEmail";
 import { Chip } from "@mui/material";
 import { NewReleases as NewBadgeIcon } from "@mui/icons-material";
 import { FaQuestion } from "react-icons/fa";
+import { supabaseAdmin } from "../../../database/supabaseAdmin";
 
 const MemberOrganization = () => {
   const [members, setMembers] = useState([]);
