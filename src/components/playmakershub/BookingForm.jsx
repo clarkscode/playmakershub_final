@@ -772,7 +772,7 @@ const BookingForm = ({
             <p className="text-gray-700 text-sm">
               <strong>Important Notice!</strong> Non-pending Booking Status
               cannot be edited. For more details, email us at
-              playmakers.ustp@gmail.com for your concerns.
+              playmakers.ustp@gmail.com for your concerns. 🙂
             </p>
           </div>
         </div>
