@@ -52,6 +52,29 @@ const Homepage = () => {
     description: "",
   });
 
+  const initialFormData = {
+    title: "",
+    startDate: "",
+    endDate: "",
+    startTime: "",
+    endTime: "",
+    firstName: "",
+    lastName: "",
+    email: "",
+    location: "",
+    eventType: "Organization",
+    eventTypeName: "",
+    genreThemeHolder: "Genre",
+    genre: "",
+    theme: "",
+    guitarist: 0,
+    vocalist: 0,
+    bassist: 0,
+    keyboardist: 0,
+    percussionist: 0,
+    description: "",
+  };
+
   const today = new Date().toISOString().split("T")[0];
 
   const togglePopup = () => setPopupVisible(!popupVisible);
@@ -79,30 +102,6 @@ const Homepage = () => {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-
-    // Ensure the input time is valid
-    const validateFutureTime = (fieldName, value) => {
-      const today = new Date();
-      const [hours, minutes] = value.split(":").map(Number);
-      const inputTime = new Date();
-      inputTime.setHours(hours, minutes, 0, 0);
-
-      if (inputTime <= today) {
-        toast.error(
-          `${fieldName} cannot be in the past. Please select a future time.`
-        );
-        return false;
-      }
-      return true;
-    };
-
-    if (name === "startTime" || name === "endTime") {
-      const isValid = validateFutureTime(
-        name === "startTime" ? "Start Time" : "End Time",
-        value
-      );
-      if (!isValid) return;
-    }
 
     setFormData((prevData) => ({ ...prevData, [name]: value }));
   };
@@ -152,8 +151,68 @@ const Homepage = () => {
     formData.keyboardist > 0 ||
     formData.percussionist > 0;
 
+  const validateDateTime = () => {
+    const startDate = new Date(formData.startDate);
+    const endDate = new Date(formData.endDate);
+    const start = new Date(`${formData.startDate}T${formData.startTime}`);
+    const end = new Date(`${formData.endDate}T${formData.endTime}`);
+    const todayDate = new Date(today);
+    const now = new Date();
+
+    // Ensure start date is not in the past
+    if (startDate < todayDate) {
+      toast.error("Start date cannot be in the past.");
+      return false;
+    }
+
+    // Ensure end date is not before start date
+    if (endDate < startDate) {
+      toast.error("End date cannot be earlier than start date.");
+      return false;
+    }
+
+    // Ensure start time is not in the past if start date is today
+    if (
+      formData.startDate === today &&
+      start.getHours() * 60 + start.getMinutes() <
+        now.getHours() * 60 + now.getMinutes()
+    ) {
+      toast.error("Start time cannot be in the past.");
+      return false;
+    }
+
+    // Ensure start time is before end time for the same day
+    if (
+      formData.startDate === formData.endDate &&
+      formData.startTime >= formData.endTime
+    ) {
+      toast.error("End time must be after start time for the same day.");
+      return false;
+    }
+
+    // Optional: Ensure the event doesn't exceed a maximum duration
+    const maxDuration = 7;
+    const differenceInDays = (endDate - startDate) / (1000 * 60 * 60 * 24);
+    if (differenceInDays > maxDuration) {
+      toast.error(`Event duration cannot exceed ${maxDuration} days.`);
+      return false;
+    }
+
+    // Optional: Ensure event duration is reasonable (e.g., not overnight)
+    // if (end - start > 24 * 60 * 60 * 1000) {
+    //   toast.error("Event cannot exceed 24 hours.");
+    //   return false;
+    // }
+
+    return true;
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    if (!validateDateTime()) {
+      return; // stop submission if validation fails
+    }
 
     // Email domain validation
     const emailDomain = formData.email.split("@")[1];
@@ -198,8 +257,10 @@ const Homepage = () => {
         `Your event "${formData.title}" booking confirmation`,
         emailContent
       );
+      // Reset form fields
+      setFormData(initialFormData);
       toast.success("Booked successfully!");
-      console.log("Booking Result:", result);
+      // console.log("Booking Result:", result);
     } catch (error) {
       toast.error("Failed to complete the booking process.");
       console.error("Booking Error:", error);
