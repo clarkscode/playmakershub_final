@@ -16,7 +16,7 @@ const Navbar = ({ isJoinEnabled, onPopupToggle, isAuthenticated }) => {
       <div className="flex-1"></div>
 
       {/* Centered Navigation */}
-      <nav className="hidden md:flex justify-center space-x-20 w-full">
+      <nav className="flex space-x-20">
         <button
           onClick={() => navigate("/about-us")}
           className="text-[#FFFFFF] text-2xl font-medium hover:text-[#a83c70]"

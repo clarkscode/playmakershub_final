@@ -36,6 +36,10 @@ const AuthenticatedHeader = () => {
   const [color, setColor] = useState("orange");
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [notifications, setNotifications] = useState([]);
+  const [passwords, setPasswords] = useState({
+    currentPassword: "",
+    newPassword: "",
+  });
 
   const getCurrentUser = async () => {
     const {
@@ -390,6 +394,56 @@ const AuthenticatedHeader = () => {
     }
   };
 
+  const handleChangePassword = async () => {
+    try {
+      const { data: adminData, error: userError } =
+        await supabase.auth.getUser();
+
+      if (userError) {
+        toast.error("admin data is missing");
+        return;
+      }
+
+      // Validate that both fields are filled
+      if (!passwords.currentPassword || !passwords.newPassword) {
+        toast.error("Please fill in both fields.");
+        return;
+      }
+
+      const adminEmail = adminData.user.email;
+      // Reauthenticate user to confirm their current password
+      const { error: signInError } = await supabase.auth.signInWithPassword({
+        email: adminEmail, // Ensure the user is logged in and email is available
+        password: passwords.currentPassword,
+      });
+
+      if (signInError) {
+        console.error("Error verifying current password:", signInError);
+        toast.error("Incorrect current password.");
+        setPasswords({ currentPassword: "", newPassword: "" });
+
+        return;
+      }
+
+      // Update password to the new one
+      const { error: passwordError } = await supabase.auth.updateUser({
+        password: passwords.newPassword,
+      });
+
+      if (passwordError) {
+        console.error("Error updating password:", passwordError.message);
+        toast.error("Failed to update password.");
+        return;
+      }
+
+      toast.success("Password updated successfully!");
+      setPasswords({ currentPassword: "", newPassword: "" });
+    } catch (error) {
+      console.error("Error changing password:", error.message);
+      toast.error("An unexpected error occurred. Please try again.");
+    }
+  };
+
   return (
     <div>
       <header className="flex items-center justify-between p-4 shadow-md py-1 relative">
@@ -610,6 +664,51 @@ const AuthenticatedHeader = () => {
                         className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3"
                       />
                     </div>
+                    {/* Change Password Section */}
+                    <h4 className="text-lg font-bold mb-4">Change Password</h4>
+                    <div className="mb-4">
+                      <label className="block text-sm font-medium text-gray-700">
+                        Current Password
+                      </label>
+                      <input
+                        type="password"
+                        name="currentPassword"
+                        value={passwords.currentPassword}
+                        onChange={(e) =>
+                          setPasswords((prev) => ({
+                            ...prev,
+                            currentPassword: e.target.value,
+                          }))
+                        }
+                        className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3"
+                      />
+                    </div>
+                    <div className="mb-4">
+                      <label className="block text-sm font-medium text-gray-700">
+                        New Password
+                      </label>
+                      <input
+                        type="password"
+                        name="newPassword"
+                        value={passwords.newPassword}
+                        onChange={(e) =>
+                          setPasswords((prev) => ({
+                            ...prev,
+                            newPassword: e.target.value,
+                          }))
+                        }
+                        className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3"
+                      />
+                    </div>
+                    <div className="flex justify-end">
+                      <button
+                        type="button"
+                        className="px-4 py-2 bg-blue-500 text-white rounded-md"
+                        onClick={handleChangePassword}
+                      >
+                        Change Password
+                      </button>
+                    </div>
                   </>
                 ) : (
                   <>
@@ -677,6 +776,51 @@ const AuthenticatedHeader = () => {
                         onChange={handleInputChange}
                         className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3"
                       />
+                    </div>
+                    {/* Change Password Section */}
+                    <h4 className="text-lg font-bold mb-4">Change Password</h4>
+                    <div className="mb-4">
+                      <label className="block text-sm font-medium text-gray-700">
+                        Current Password
+                      </label>
+                      <input
+                        type="password"
+                        name="currentPassword"
+                        value={passwords.currentPassword}
+                        onChange={(e) =>
+                          setPasswords((prev) => ({
+                            ...prev,
+                            currentPassword: e.target.value,
+                          }))
+                        }
+                        className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3"
+                      />
+                    </div>
+                    <div className="mb-4">
+                      <label className="block text-sm font-medium text-gray-700">
+                        New Password
+                      </label>
+                      <input
+                        type="password"
+                        name="newPassword"
+                        value={passwords.newPassword}
+                        onChange={(e) =>
+                          setPasswords((prev) => ({
+                            ...prev,
+                            newPassword: e.target.value,
+                          }))
+                        }
+                        className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3"
+                      />
+                    </div>
+                    <div className="flex justify-end">
+                      <button
+                        type="button"
+                        className="px-4 py-2 bg-blue-500 text-white rounded-md"
+                        onClick={handleChangePassword}
+                      >
+                        Change Password
+                      </button>
                     </div>
                   </>
                 )}

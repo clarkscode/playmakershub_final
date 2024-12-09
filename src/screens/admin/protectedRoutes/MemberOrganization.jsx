@@ -22,7 +22,7 @@ const MemberOrganization = () => {
   const [members, setMembers] = useState([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
-  const [loading, setLoading] = useState(false); // New loading state
+  const [loading, setLoading] = useState(false);
   const [newMember, setNewMember] = useState({
     email: "",
     password: "",
@@ -31,7 +31,7 @@ const MemberOrganization = () => {
     mobile: "",
     events: 0,
     join_date: "",
-    status: "active",
+    status: "inactive",
     profile_image: "",
     name: "",
   });
@@ -43,6 +43,7 @@ const MemberOrganization = () => {
   const [statusFilter, setStatusFilter] = useState("all"); // Filter by status
   const [roleFilter, setRoleFilter] = useState("all"); // New state for role filtering
   const [isTooltipOpen, setIsTooltipOpen] = useState(false);
+  const [profilePicture, setProfilePicture] = useState(null); // Define profilePicture state
 
   // Pagination states
   const [currentPage, setCurrentPage] = useState(1);
@@ -57,7 +58,8 @@ const MemberOrganization = () => {
 
   const loadMembers = async () => {
     try {
-      setLoading(true); // Start loading
+      setLoading(true);
+      // Start loading
 
       const data = await fetchMembers();
       const parsedMembers = data?.map((v) => ({
@@ -67,12 +69,14 @@ const MemberOrganization = () => {
       }));
       if (parsedMembers) {
         const sortedMembers = sortMembersByDate(parsedMembers);
-        setMembers(sortedMembers); // Save sorted members
+        setMembers(sortedMembers);
+        // Save sorted members
       }
     } catch (error) {
       console.error("Error loading members:", error.message);
     } finally {
-      setLoading(false); // End loading
+      setLoading(false);
+      // End loading
     }
   };
 
@@ -131,30 +135,65 @@ const MemberOrganization = () => {
     setCurrentPage(1); // Reset to page 1 when search query changes
   };
 
+  // Utility function to generate a strong random password
+  const generatePassword = (length = 12) => {
+    const chars =
+      "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()";
+    let password = "";
+    for (let i = 0; i < length; i++) {
+      password += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    return password;
+  };
+
   const handleSubmit = async () => {
     try {
       setLoading(true);
+
+      // Auto-generate password
+      const userPass = generatePassword();
+      // Step 1: Create the member's authentication record
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email: newMember.email,
-        password: newMember.password,
+        password: userPass,
       });
 
       if (authError) {
         console.error("Authentication error:", authError.message);
         // toast.error("Failed to create user in authentication.");
-        // toast.error("Failed to create member");
+        toast.error("Failed to create member");
         return;
       }
 
+      // Step 2: Upload the profile picture to Supabase Storage
+      let profileImageUrl = "";
+      if (profilePicture) {
+        const fileName = `${Date.now()}_${profilePicture.name}`;
+        const { data: fileData, error: fileError } = await supabase.storage
+          .from("profiles")
+          .upload(fileName, profilePicture);
+
+        if (fileError) {
+          console.error("Error uploading profile picture:", fileError.message);
+          toast.error("Failed to upload profile picture.");
+          return;
+        }
+
+        profileImageUrl = `https://jpeheolrqpywermjdcyg.supabase.co/storage/v1/object/public/profiles/${fileData.path}`;
+      }
+
+      // Step 3: Insert the member data into the `members_orgs` table
       const { password, ...memberData } = {
         ...newMember,
+        profile_image: profileImageUrl,
         role: roles,
         genre: genres,
         join_date: new Date().toISOString().split("T")[0],
         events: 0,
         authid: authData.user.id,
       };
-      console.log("member password", password);
+
+      // console.log("member password", password);
       const { error: memberError } = await supabase
         .from("members_orgs")
         .insert(memberData);
@@ -167,6 +206,23 @@ const MemberOrganization = () => {
         toast.error("Failed to save member data.");
         return;
       }
+
+      // Send the email with credentials
+      const subject = "Your Member Account Credentials";
+      const content = `
+      <p>Dear ${newMember.name},</p>
+      <p>Your member account has been successfully created. Below are your login credentials:</p>
+      <p><strong>Email:</strong> ${newMember.email}</p>
+      <p><strong>Password:</strong> ${userPass}</p>
+      <p>We recommend that you log in and change your password as soon as possible.</p>
+      <p>Best regards,<br/>The Playmakers Team</p>
+      <a href="https://www.playmakershub.org" target="_blank">www.playmakershub.org</a></p>
+
+    `;
+
+      await sendEmail(newMember.email, subject, content);
+
+      toast.success("Member created and email sent successfully!");
 
       // Add new member to the list and sort it
       setMembers((prevMembers) =>
@@ -506,6 +562,8 @@ const MemberOrganization = () => {
           genres={genres}
           setGenres={setGenres}
           handleSubmit={handleSubmit}
+          setProfilePicture={setProfilePicture}
+          profilePicture={profilePicture}
         />
       </Modal>
 

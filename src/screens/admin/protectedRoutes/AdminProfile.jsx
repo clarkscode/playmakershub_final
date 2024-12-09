@@ -12,8 +12,13 @@ const AdminProfile = () => {
   const [error, setError] = useState(null);
   const [isEditing, setIsEditing] = useState(false);
   const [saving, setSaving] = useState(false); // For save button loading
-
+  const [isChangingPassword, setIsChangingPassword] = useState(false); // Password change mode
+  const [passwords, setPasswords] = useState({
+    currentPassword: "",
+    newPassword: "",
+  }); // For password change
   const navigate = useNavigate();
+
   const fetchAdminData = async () => {
     try {
       setLoading(true);
@@ -89,6 +94,14 @@ const AdminProfile = () => {
     }));
   };
 
+  const handlePasswordChangeInput = (e) => {
+    const { name, value } = e.target;
+    setPasswords((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+  };
+
   const handleSaveChanges = async () => {
     try {
       setSaving(true);
@@ -126,6 +139,42 @@ const AdminProfile = () => {
       toast.error(err.message);
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleChangePassword = async () => {
+    try {
+      if (!passwords.currentPassword || !passwords.newPassword) {
+        toast.error("Please fill in both fields.");
+        return;
+      }
+
+      const { error: signInError } = await supabase.auth.signInWithPassword({
+        email: adminData.email,
+        password: passwords.currentPassword,
+      });
+
+      if (signInError) {
+        console.error("Error verifying current password:", signInError.message);
+        toast.error("Incorrect current password.");
+        return;
+      }
+
+      const { error: passwordError } = await supabase.auth.updateUser({
+        password: passwords.newPassword,
+      });
+
+      if (passwordError) {
+        console.error("Error updating password:", passwordError.message);
+        toast.error("Failed to update password.");
+        return;
+      }
+
+      toast.success("Password updated successfully!");
+      setPasswords({ currentPassword: "", newPassword: "" });
+      setIsChangingPassword(false);
+    } catch (err) {
+      toast.error("An unexpected error occurred. Please try again.");
     }
   };
 
@@ -289,6 +338,59 @@ const AdminProfile = () => {
                 >
                   {joinStatus ? "Close Join" : "Open Join"}
                 </button>
+              </div>
+              {/* Change password */}
+              <div className="mt-8">
+                <h3 className="text-lg font-bold">Change Password</h3>
+                {isChangingPassword ? (
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700">
+                        Current Password
+                      </label>
+                      <input
+                        type="password"
+                        name="currentPassword"
+                        value={passwords.currentPassword}
+                        onChange={handlePasswordChangeInput}
+                        className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700">
+                        New Password
+                      </label>
+                      <input
+                        type="password"
+                        name="newPassword"
+                        value={passwords.newPassword}
+                        onChange={handlePasswordChangeInput}
+                        className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3"
+                      />
+                    </div>
+                    <div className="flex justify-end space-x-4">
+                      <button
+                        onClick={() => setIsChangingPassword(false)}
+                        className="px-4 py-2 bg-gray-300 text-gray-700 rounded-md"
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        onClick={handleChangePassword}
+                        className="px-4 py-2 bg-blue-500 text-white rounded-md"
+                      >
+                        Change Password
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <button
+                    onClick={() => setIsChangingPassword(true)}
+                    className="px-4 py-2 bg-yellow-500 text-white rounded-md"
+                  >
+                    Change Password
+                  </button>
+                )}
               </div>
             </div>
           </div>

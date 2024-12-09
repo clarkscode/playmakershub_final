@@ -10,8 +10,6 @@ const VALIDATION_ERRORS = {
   PHONE_REQUIRED: "Mobile number is required.",
   PHONE_INVALID: "Invalid mobile number.",
   PHONE_DUPLICATE: "This phone number is already in use.",
-  PASSWORD_REQUIRED: "Password is required.",
-  PASSWORD_SHORT: "Password must be at least 8 characters long.",
   PROFILE_REQUIRED: "Profile picture is required.",
   ROLES_REQUIRED: "Exactly 2 roles are required for each member.",
   GENRES_REQUIRED: "At least one genre is required.",
@@ -48,11 +46,11 @@ const MemberForm = ({
   setGenres,
   loading,
   handleSubmit,
+  setProfilePicture,
+  profilePicture,
 }) => {
   // const [newRole, setNewRole] = useState("");
   const [newGenre, setNewGenre] = useState("");
-  const [profilePicture, setProfilePicture] = useState(null);
-  const [uploading, setUploading] = useState(false);
   const [previewImage, setPreviewImage] = useState(null);
   const [errors, setErrors] = useState({});
   const [formIsValid, setFormIsValid] = useState(false);
@@ -126,40 +124,18 @@ const MemberForm = ({
     const file = e.target.files[0];
     if (!file) return;
 
+    // Save the selected file locally.
     setProfilePicture(file);
     const reader = new FileReader();
-    reader.onload = () => setPreviewImage(reader.result); // Show preview
+    // Show preview
+    reader.onload = () => setPreviewImage(reader.result);
     reader.readAsDataURL(file);
-  };
-
-  // Upload Profile Picture
-  const handleUpload = async () => {
-    if (!profilePicture) return;
-    try {
-      setUploading(true);
-      const fileName = `${Date.now()}_${profilePicture.name}`;
-
-      const { data, error } = await supabase.storage
-        .from("profiles")
-        .upload(fileName, profilePicture);
-
-      if (error) throw new Error(error.message);
-
-      const manualPublicURL = `https://jpeheolrqpywermjdcyg.supabase.co/storage/v1/object/public/profiles/${data.path}`;
-      toast.success("Profile picture uploaded successfully!");
-      setNewMember((prev) => ({ ...prev, profile_image: manualPublicURL }));
-    } catch (error) {
-      console.error("Error uploading file:", error.message);
-      toast.error("An error occurred during the upload.");
-    } finally {
-      setUploading(false);
-    }
   };
 
   // Form validation logic
   const validateForm = async () => {
     const validationErrors = {};
-    const { name, email, mobile, password } = newMember;
+    const { name, email, mobile } = newMember;
 
     if (!name) validationErrors.name = VALIDATION_ERRORS.NAME_REQUIRED;
     if (!email) {
@@ -174,11 +150,7 @@ const MemberForm = ({
     } else if (await checkPhoneNumberUniqueness(mobile)) {
       validationErrors.mobile = VALIDATION_ERRORS.PHONE_DUPLICATE;
     }
-    if (!password) {
-      validationErrors.password = VALIDATION_ERRORS.PASSWORD_REQUIRED;
-    } else if (password.length < 8) {
-      validationErrors.password = VALIDATION_ERRORS.PASSWORD_SHORT;
-    }
+
     if (!profilePicture)
       validationErrors.profilePicture = VALIDATION_ERRORS.PROFILE_REQUIRED;
 
@@ -201,7 +173,6 @@ const MemberForm = ({
     try {
       if (await validateForm()) {
         handleSubmit();
-        toast.success("Member created successfully! 🎉");
       }
     } catch (error) {
       console.error("Error submitting the form:", error.message);
@@ -239,17 +210,6 @@ const MemberForm = ({
         onChange={handleInputChange}
         error={errors.email}
         placeholder="Enter email"
-      />
-
-      {/* Password */}
-      <FormInput
-        label="Password"
-        type="password"
-        name="password"
-        value={newMember.password}
-        onChange={handleInputChange}
-        error={errors.password}
-        placeholder="Enter password"
       />
 
       {/* Roles */}
@@ -311,8 +271,6 @@ const MemberForm = ({
         onChange={handleFileChange}
         previewImage={previewImage}
         error={errors.profilePicture}
-        onUpload={handleUpload}
-        uploading={uploading}
       />
 
       {/* Submit Button */}
@@ -454,14 +412,7 @@ const TagInput = ({
 );
 
 // File Input Component
-const FileInput = ({
-  label,
-  onChange,
-  previewImage,
-  error,
-  onUpload,
-  uploading,
-}) => (
+const FileInput = ({ label, onChange, previewImage, error }) => (
   <div className="mb-4">
     <label className="block text-sm font-medium text-gray-700">{label}</label>
     <input
@@ -480,14 +431,6 @@ const FileInput = ({
       </div>
     )}
     {error && <p className="text-red-500 text-sm mt-1">{error}</p>}
-    <button
-      type="button"
-      className="mt-2 px-4 py-2 bg-blue-500 text-white rounded-md"
-      onClick={onUpload}
-      disabled={uploading}
-    >
-      {uploading ? "Uploading..." : "Upload Picture"}
-    </button>
   </div>
 );
 
