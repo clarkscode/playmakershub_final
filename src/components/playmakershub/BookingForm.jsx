@@ -782,9 +782,9 @@ const BookingForm = ({
           <div className="mb-6">
             <ReCAPTCHA
               // test
-              sitekey="6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI"
+              // sitekey="6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI"
               // production
-              // sitekey="6Ld7-ZMqAAAAAF7YrZhOzjlo4htz7PbAuT7MiJgo"
+              sitekey="6Ld7-ZMqAAAAAF7YrZhOzjlo4htz7PbAuT7MiJgo"
               onChange={handleCaptchaVerify}
               aria-label="CAPTCHA verification"
             />
