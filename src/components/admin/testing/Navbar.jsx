@@ -13,10 +13,10 @@ const Navbar = ({ isJoinEnabled, onPopupToggle, isAuthenticated }) => {
 
   return (
     <header className="flex items-center justify-between p-4 shadow-md py-1">
-      <div className="flex-1"></div>
+      <div className="hidden md:flex flex-1"></div>
 
       {/* Centered Navigation */}
-      <nav className="flex space-x-20">
+      <nav className="hidden md:flex justify-center space-x-20 w-full ">
         <button
           onClick={() => navigate("/about-us")}
           className="text-[#FFFFFF] text-2xl font-medium hover:text-[#a83c70]"
@@ -68,7 +68,9 @@ const Navbar = ({ isJoinEnabled, onPopupToggle, isAuthenticated }) => {
       </nav>
 
       {/* Login button aligned to the right */}
-      {isAuthenticated ? null : (
+      {isAuthenticated ? (
+        <div></div>
+      ) : (
         <div className="flex-1 flex justify-end">
           <button
             onClick={() => navigate("/member/login")}

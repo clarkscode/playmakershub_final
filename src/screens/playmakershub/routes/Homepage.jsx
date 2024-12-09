@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import {
@@ -30,6 +30,7 @@ const Homepage = () => {
 
   const navigate = useNavigate();
   const modalRef = useRef(null);
+  const location = useLocation(); // Get the current location
 
   const [formData, setFormData] = useState({
     title: "",
@@ -88,6 +89,21 @@ const Homepage = () => {
       window.location.reload();
     }
   };
+
+  useEffect(() => {
+    if (location.pathname === "/") {
+      // Dynamically inject the Tidio script
+      const script = document.createElement("script");
+      script.src = "//code.tidio.co/40xhlaqxiyjus5tvh4qmw8krqzy1midw.js";
+      script.async = true;
+      document.body.appendChild(script);
+
+      // Cleanup to remove the script when the component unmounts or route changes
+      return () => {
+        document.body.removeChild(script);
+      };
+    }
+  }, [location.pathname]); // Re-run the effect when the route changes
 
   const notifyAdmins = async (eventName) => {
     try {
