@@ -94,7 +94,9 @@ const Homepage = () => {
     if (location.pathname === "/") {
       // Dynamically inject the Tidio script
       const script = document.createElement("script");
-      script.src = "//code.tidio.co/40xhlaqxiyjus5tvh4qmw8krqzy1midw.js";
+      // script.src = "//code.tidio.co/40xhlaqxiyjus5tvh4qmw8krqzy1midw.js";
+      script.src = "//code.tidio.co/oqfkdl2wniwbsjhgjyg9rvnccyq7eawo.js";
+
       script.async = true;
       document.body.appendChild(script);
 
