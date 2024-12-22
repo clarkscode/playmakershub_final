@@ -1,7 +1,6 @@
 import { useState, useEffect } from "react";
 import { retrievePublishedEvents } from "../../database/events";
-import PublishedEventsTable from "./Reusable/PublishedEventstable";
-
+import PublishedEventsTable from "./Reusable/PublishedEventsTable";
 const PublishedEvents = () => {
   const [publishedEvents, setPublishedEvents] = useState([]);
   const [loading, setLoading] = useState(true);
