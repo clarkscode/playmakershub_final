@@ -3,7 +3,6 @@ import { useState, useEffect } from "react";
 // components and routes
 import PendingEvents from "../../../components/admin/PendingEvents";
 import AcceptedEvents from "../../../components/admin/AcceptedEvents";
-import PublishedEvents from "../../../components/admin/PublishedEvents";
 import PastEvents from "../../../components/admin/PastEvents";
 import RejectedEvents from "../../../components/admin/RejectedEvents";
 import OngoingEvents from "../../../components/admin/OngoingEvents";
@@ -11,6 +10,7 @@ import Header from "../../../components/admin/Header";
 import Sidebar from "../../../components/admin/Sidebar";
 import { addEvent } from "../../../assets";
 import CreateEventModal from "../../../components/admin/Reusable/CreateEventModal";
+import PublishedEvents from "../../../components/admin/PublishedEvents";
 
 const EventManagement = () => {
   const [activeTab, setActiveTab] = useState("recentlyAdded");

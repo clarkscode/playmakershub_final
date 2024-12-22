@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { retrievePublishedEvents } from "../../database/events";
 import PublishedEventsTable from "./Reusable/PublishedEventstable";
 
-const AcceptedEvents = () => {
+const PublishedEvents = () => {
   const [publishedEvents, setPublishedEvents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false); // For reload animation
@@ -139,4 +139,4 @@ const AcceptedEvents = () => {
   );
 };
 
-export default AcceptedEvents;
+export default PublishedEvents;
