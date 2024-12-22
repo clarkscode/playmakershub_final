@@ -69,7 +69,6 @@ const AdminLogin = () => {
         tokenStorage.setItem("adminAuthToken", session.access_token);
         tokenStorage.setItem("adminRefreshToken", session.refresh_token);
         tokenStorage.setItem("adminName", adminName);
-
         navigate("/admin/dashboard");
       } catch (fetchError) {
         console.error("Error verifying user type:", fetchError);

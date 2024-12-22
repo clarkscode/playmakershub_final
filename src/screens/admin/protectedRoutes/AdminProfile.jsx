@@ -202,7 +202,7 @@ const AdminProfile = () => {
       await supabase.auth.signOut();
       localStorage.removeItem("adminAuthToken");
       localStorage.removeItem("adminRefreshToken");
-      navigate("/adminonly"); // Redirect to login page
+      navigate("/member/login"); // Redirect to login page
     }
   };
 

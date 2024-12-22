@@ -4,6 +4,41 @@ import { playmakersLogo } from "../../assets";
 import { useNavigate } from "react-router-dom";
 
 const MembersLogin = () => {
+  // const [email, setEmail] = useState("");
+  // const [password, setPassword] = useState("");
+  // const [errorMessage, setErrorMessage] = useState("");
+  // const [loading, setLoading] = useState(false);
+  // const navigate = useNavigate();
+
+  // useEffect(() => {
+  //   const token = localStorage.getItem("authToken");
+  //   if (token) {
+  //     navigate("/playmakershub");
+  //   }
+  // }, [navigate]);
+
+  // const handleLogin = async (e) => {
+  //   e.preventDefault();
+  //   setLoading(true);
+
+  //   const { data, error } = await supabase.auth.signInWithPassword({
+  //     email,
+  //     password,
+  //   });
+
+  //   setLoading(false);
+
+  //   if (error) {
+  //     setErrorMessage(error.message);
+  //     return;
+  //   }
+  //   // console.log(data.session.access_token);
+  //   if (data.session.access_token) {
+  //     localStorage.setItem("authToken", data.session.access_token);
+  //     navigate("/playmakershub");
+  //   }
+  // };
+
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
@@ -11,15 +46,23 @@ const MembersLogin = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    const token = localStorage.getItem("authToken");
+    const token =
+      localStorage.getItem("authToken") ||
+      localStorage.getItem("adminAuthToken");
     if (token) {
-      navigate("/playmakershub");
+      // Check for admin token first, then member token
+      navigate(
+        token === localStorage.getItem("adminAuthToken")
+          ? "/admin/dashboard"
+          : "/playmakershub"
+      );
     }
   }, [navigate]);
 
   const handleLogin = async (e) => {
     e.preventDefault();
     setLoading(true);
+    setErrorMessage("");
 
     const { data, error } = await supabase.auth.signInWithPassword({
       email,
@@ -29,13 +72,25 @@ const MembersLogin = () => {
     setLoading(false);
 
     if (error) {
-      setErrorMessage(error.message);
+      setErrorMessage(error.message || "Invalid credentials");
       return;
     }
-    // console.log(data.session.access_token);
-    if (data.session.access_token) {
-      localStorage.setItem("authToken", data.session.access_token);
-      navigate("/playmakershub");
+
+    if (data?.user) {
+      const userMeta = data.user.user_metadata || {};
+      const accessToken = data.session.access_token;
+
+      if (userMeta.is_admin || userMeta.is_super_admin) {
+        // Admin user
+        localStorage.setItem("adminAuthToken", accessToken);
+        navigate("/admin/dashboard");
+      } else {
+        // Regular member
+        localStorage.setItem("authToken", accessToken);
+        navigate("/playmakershub");
+      }
+    } else {
+      setErrorMessage("Unable to retrieve user information.");
     }
   };
 

@@ -1,15 +1,16 @@
 import { useEffect, useState } from "react";
 import { toast } from "react-toastify";
-import {
-  retrieveOngoingEvents,
-  handleParticipation,
-  supabase,
-} from "../../database/supabase";
+import { supabase } from "../../database/supabase";
+import { handleParticipation } from "../../database/participation";
+import { retrieveHomeOngoingEvents } from "../../database/events";
 
 const UpcomingEvents = () => {
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [participationLoading, setParticipationLoading] = useState(null);
+  const [participationLoading, setParticipationLoading] = useState({
+    eventId: null,
+    role: null,
+  });
   const [user, setUser] = useState(null);
   const [memberDetails, setMemberDetails] = useState(null);
 
@@ -72,7 +73,7 @@ const UpcomingEvents = () => {
 
     const fetchOngoingEvents = async () => {
       try {
-        const ongoingEvents = await retrieveOngoingEvents();
+        const ongoingEvents = await retrieveHomeOngoingEvents();
         // Filter out duplicate participations for events
         const cleanedEvents = ongoingEvents.map((event) => {
           Object.keys(event.musicians).forEach((role) => {
@@ -165,7 +166,8 @@ const UpcomingEvents = () => {
     // Step 3: Check if the member meets the status requirement for the event
 
     try {
-      setParticipationLoading(event.event_id);
+      // ✅ Set specific loading state pag mag participate para dili mo loading tanan participate button
+      setParticipationLoading({ eventId: event.event_id, role });
 
       // Fetch the required statuses for the event from the status_required table
       const { data: statusRequired, error: statusError } = await supabase
@@ -207,7 +209,7 @@ const UpcomingEvents = () => {
       if (response.success) {
         toast.success(response.message);
         // Refresh events and member details
-        const refreshedEvents = await retrieveOngoingEvents();
+        const refreshedEvents = await retrieveHomeOngoingEvents();
         setEvents(refreshedEvents);
       } else {
         toast.error(response.message);
@@ -216,7 +218,7 @@ const UpcomingEvents = () => {
       console.error("Error in participation:", error);
       toast.error("An error occurred while participating.");
     } finally {
-      setParticipationLoading(null);
+      setParticipationLoading({ eventId: null, role: null });
     }
   };
 
@@ -304,7 +306,7 @@ const UpcomingEvents = () => {
           {
             event_id: event.event_id,
             user_id: null, // Admin notification
-            notification_type: "web",
+            notification_type: "backout",
             content: `${memberDetails.name} has backed out of the event ${event.event_title}.`,
             sent_at: new Date(),
           },
@@ -321,7 +323,7 @@ const UpcomingEvents = () => {
         );
       }
       // Step 7: Refresh the events and member details
-      const refreshedEvents = await retrieveOngoingEvents();
+      const refreshedEvents = await retrieveHomeOngoingEvents();
       setEvents(refreshedEvents);
 
       const { data: updatedMemberDetails } = await supabase
@@ -413,15 +415,21 @@ const UpcomingEvents = () => {
                               <button
                                 onClick={() => handleParticipate(role, event)}
                                 className={`text-sm text-white px-4 py-1 rounded ${
-                                  participationLoading === event.event_id
+                                  participationLoading.eventId ===
+                                    event.event_id &&
+                                  participationLoading.role === role
                                     ? "bg-gray-400 cursor-not-allowed"
-                                    : "bg-blue-500 hover:bg-blue-600"
+                                    : "bg-[#5C1B33] hover:bg-[#923f5d]"
                                 }`}
                                 disabled={
-                                  participationLoading === event.event_id
+                                  participationLoading.eventId ===
+                                    event.event_id &&
+                                  participationLoading.role === role
                                 }
                               >
-                                {participationLoading === event.event_id
+                                {participationLoading.eventId ===
+                                  event.event_id &&
+                                participationLoading.role === role
                                   ? "Loading..."
                                   : "Participate"}
                               </button>

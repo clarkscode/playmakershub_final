@@ -4,14 +4,14 @@ import LocationOnIcon from "@mui/icons-material/LocationOn";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import LinearProgress from "@mui/material/LinearProgress";
 import { useState } from "react";
-import {
-  supabase,
-  updateEventStatus,
-  updateEventStatusToPublished,
-} from "../../database/supabase";
+import { supabase } from "../../database/supabase";
 import sendEmail from "../../database/sendEmail";
 import { formatDateTime } from "./Reusable/FormatDate";
 import { useNavigate } from "react-router-dom";
+import {
+  updateEventStatus,
+  updateEventStatusToPublished,
+} from "../../database/events";
 
 const EventCard = ({
   bookingId,

@@ -5,18 +5,18 @@ import MemberForm from "../../../components/admin/Reusable/MemberForm";
 import MemberDetailsModal from "../../../components/admin/MemberDetailsModal";
 import Sidebar from "../../../components/admin/Sidebar";
 import Header from "../../../components/admin/Header";
-import {
-  deleteMember,
-  fetchMembers,
-  supabase,
-  updateMember,
-} from "../../../database/supabase";
+import { supabase } from "../../../database/supabase";
 import { toast } from "react-toastify";
 import sendEmail from "../../../database/sendEmail";
 import { Chip } from "@mui/material";
 import { NewReleases as NewBadgeIcon } from "@mui/icons-material";
 import { FaQuestion } from "react-icons/fa";
 import { supabaseAdmin } from "../../../database/supabaseAdmin";
+import {
+  deleteMember,
+  fetchMembers,
+  updateMember,
+} from "../../../database/members";
 
 const MemberOrganization = () => {
   const [members, setMembers] = useState([]);
@@ -456,7 +456,7 @@ const MemberOrganization = () => {
             "guitarist",
             "vocalist",
             "bassist",
-            "keyboardist",
+            "melodics",
             "percussionist",
           ].map((role) => (
             <button

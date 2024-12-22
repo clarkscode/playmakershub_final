@@ -26,6 +26,50 @@ const ChatPage = () => {
     }
   };
 
+  // Fetch messages for selected booking
+  const fetchMessages = async (bookingId) => {
+    try {
+      setLoadingMessages(true);
+
+      const { data, error } = await supabase
+        .from("chats")
+        .select("*")
+        .eq("booking_id", bookingId)
+        .order("timestamp", { ascending: true });
+
+      if (error) throw error;
+
+      setMessages(data);
+      markMessagesAsSeen(bookingId); // Mark messages as seen for the selected booking
+    } catch (error) {
+      console.error("Error fetching messages:", error.message);
+    } finally {
+      setLoadingMessages(false);
+    }
+  };
+
+  const markMessagesAsSeen = async (bookingId) => {
+    try {
+      // Mark all unread messages for the selected booking as seen
+      await supabase
+        .from("chats")
+        .update({ is_seen: true })
+        .eq("booking_id", bookingId)
+        .eq("is_seen", false);
+
+      // Update local state to remove the badge without reloading
+      setBookings((prevBookings) =>
+        prevBookings.map((booking) =>
+          booking.booking_id === bookingId
+            ? { ...booking, unreadCount: 0 } // Reset unread count to 0
+            : booking
+        )
+      );
+    } catch (error) {
+      console.error("Error marking messages as seen:", error.message);
+    }
+  };
+
   // Fetch all bookings
   const fetchBookings = async () => {
     try {
@@ -35,7 +79,24 @@ const ChatPage = () => {
         .order("date_created", { ascending: true });
 
       if (error) throw error;
-      setBookings(data);
+
+      // Add unread message counts to each booking
+      const bookingsWithUnread = await Promise.all(
+        data.map(async (booking) => {
+          const { count, error: unreadError } = await supabase
+            .from("chats")
+            .select("*", { count: "exact" })
+            .eq("booking_id", booking.booking_id)
+            .eq("is_seen", false); // Check for unread messages
+
+          return {
+            ...booking,
+            unreadCount: unreadError ? 0 : count, // Default to 0 if error occurs
+          };
+        })
+      );
+
+      setBookings(bookingsWithUnread);
     } catch (error) {
       console.error("Error fetching bookings:", error.message);
     }
@@ -166,13 +227,39 @@ const ChatPage = () => {
     };
   };
 
+  // Real-time listener for new chat messages
+  useEffect(() => {
+    const subscription = supabase
+      .channel("realtime-chats")
+      .on(
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: "chats" },
+        (payload) => {
+          // When a new message arrives, fetch updated unread counts
+          fetchBookings();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(subscription);
+    };
+  }, []);
+
   useEffect(() => {
     fetchAdminEmail();
     fetchBookings();
   }, []);
 
   useEffect(() => {
+    if (selectedBooking) {
+      fetchMessages(selectedBooking.booking_id);
+    }
+  }, [selectedBooking]);
+
+  useEffect(() => {
     fetchChatDetails();
+    markMessagesAsSeen(); // Mark messages as seen when opening a booking
     const unsubscribe = subscribeToMessages();
     return unsubscribe;
   }, [selectedBooking]);
@@ -194,14 +281,26 @@ const ChatPage = () => {
                 {bookings.map((booking) => (
                   <button
                     key={booking.booking_id}
-                    onClick={() => setSelectedBooking(booking)}
-                    className={`w-full text-left py-2 px-4 rounded-lg mb-2 ${
+                    onClick={() => {
+                      setSelectedBooking(booking);
+                      markMessagesAsSeen(booking.booking_id);
+                    }}
+                    className={`relative w-full text-left py-2 px-4 rounded-lg mb-2 ${
                       selectedBooking?.booking_id === booking.booking_id
                         ? "bg-[#5C1B33] text-white"
                         : "bg-gray-200 text-gray-700"
                     }`}
                   >
-                    {booking.events?.[0]?.event_title || "No Title"}
+                    <span>
+                      {booking.events?.[0]?.event_title || "No Title"}
+                    </span>
+
+                    {/* Unread Messages Badge */}
+                    {booking.unreadCount > 0 && (
+                      <span className="absolute top-2 right-2 bg-red-500 text-white text-xs font-bold px-2 py-1 rounded-full">
+                        {booking.unreadCount}
+                      </span>
+                    )}
                   </button>
                 ))}
               </div>
@@ -224,7 +323,7 @@ const ChatPage = () => {
                             : bookingStatus === "Rejected"
                             ? "bg-red-500"
                             : bookingStatus === "Ongoing"
-                            ? "bg-blue-500"
+                            ? "bg-[#3B82F6]"
                             : bookingStatus === "Published"
                             ? "bg-purple-500"
                             : bookingStatus === "Past"

@@ -19,10 +19,13 @@ import {
   ListItemText,
   // ListSubheader,
 } from "@mui/material";
-import { FaBell } from "react-icons/fa";
+import { FaBell, FaQuestion } from "react-icons/fa";
 import CloseIcon from "@mui/icons-material/Close";
 import CodeIcon from "@mui/icons-material/Code";
 import WorkspacePremiumIcon from "@mui/icons-material/WorkspacePremium";
+import Badge from "@mui/material/Badge";
+import NotificationsIcon from "@mui/icons-material/Notifications";
+
 const AuthenticatedHeader = () => {
   const navigate = useNavigate();
   const [user, setUser] = useState(null);
@@ -40,6 +43,74 @@ const AuthenticatedHeader = () => {
     currentPassword: "",
     newPassword: "",
   });
+  const [isTooltipOpen, setIsTooltipOpen] = useState(false);
+  const [unseenNotificationCount, setUnseenNotificationCount] = useState(0);
+
+  const toggleTooltip = () => {
+    setIsTooltipOpen((prevState) => !prevState);
+  };
+
+  // Function to check if the notification is within 15 minutes
+  const isNewNotification = (sentAt) => {
+    const elapsedTime = Date.now() - new Date(sentAt).getTime();
+    return elapsedTime <= 15 * 60 * 1000; // 15 minutes in milliseconds
+  };
+
+  // Real-time subscription for notifications
+  useEffect(() => {
+    const channel = supabase
+      .channel("realtime-notifications")
+      .on(
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: "notifications" },
+        (payload) => {
+          setNotifications((prev) => [payload.new, ...prev]);
+          setUnseenNotificationCount((prevCount) => prevCount + 1);
+          playNotificationSound();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, []);
+
+  const playNotificationSound = () => {
+    const audio = new Audio("/sound/notifications.mp3");
+    audio.play();
+  };
+
+  const markNotificationsAsSeen = async () => {
+    try {
+      const unseenNotifications = notifications.filter(
+        (notif) => !notif.is_seen
+      );
+
+      if (unseenNotifications.length > 0) {
+        const { error } = await supabase
+          .from("notifications")
+          .update({ is_seen: true })
+          .in(
+            "notification_id",
+            unseenNotifications.map((notif) => notif.notification_id)
+          );
+
+        if (error) {
+          console.error("Error marking notifications as seen:", error.message);
+          toast.error("Failed to mark notifications as seen.");
+        } else {
+          // Update the notifications in state
+          setNotifications((prev) =>
+            prev.map((notif) => ({ ...notif, is_seen: true }))
+          );
+          setUnseenNotificationCount(0); // Reset badge count
+        }
+      }
+    } catch (err) {
+      console.error("Error updating notifications:", err.message);
+    }
+  };
 
   const getCurrentUser = async () => {
     const {
@@ -475,13 +546,80 @@ const AuthenticatedHeader = () => {
         </nav>
 
         <div className="relative flex items-center gap-4">
+          {/* Member Status Rules*/}
+          <div className="ml-3 relative">
+            <FaQuestion
+              className="text-white cursor-pointer"
+              size={20}
+              onClick={toggleTooltip}
+            />
+            {isTooltipOpen && (
+              <div
+                className="absolute top-full left-1/2 transform -translate-x-1/2 mt-2 w-64 p-4 bg-white shadow-lg rounded-lg text-gray-700 text-sm z-50"
+                style={{ maxWidth: "90vw" }}
+              >
+                <p className="mb-2 font-semibold">
+                  Member Status Change Rules:
+                </p>
+                <ul className="list-disc pl-4">
+                  <li>
+                    <span className="font-bold">Case 1:</span> 1 backout =
+                    <span className="text-orange-600 font-semibold">
+                      {" "}
+                      Inactive
+                    </span>
+                    .
+                  </li>
+                  <li>
+                    <span className="font-bold">Case 2:</span> Total
+                    participation: 1 + 1 backout =
+                    <span className="text-orange-600 font-semibold">
+                      {" "}
+                      Inactive
+                    </span>
+                    .
+                  </li>
+                  <li>
+                    <span className="font-bold">Case 3:</span> Participation ≥ 2
+                    in a month + 1 backout =
+                    <span className="text-green-600 font-semibold">
+                      {" "}
+                      Active
+                    </span>
+                    .
+                  </li>
+                  <li>
+                    <span className="font-bold">Case 4:</span> Any participation
+                    + 2 backouts in a month =
+                    <span className="text-red-600 font-semibold">
+                      {" "}
+                      Probationary
+                    </span>
+                    .
+                    <span className="italic">
+                      (Admin will review the reason for multiple backouts.)
+                    </span>
+                  </li>
+                </ul>
+              </div>
+            )}
+          </div>
           {/* Notifications Icon */}
           {user && (
             <button
-              onClick={() => toggleDrawer(true)}
+              onClick={() => {
+                toggleDrawer(true);
+                markNotificationsAsSeen();
+              }}
               className="text-[#FFFFFF] text-2xl font-medium"
             >
-              <FaBell />
+              <Badge
+                badgeContent={unseenNotificationCount}
+                color="error"
+                overlap="circular"
+              >
+                <NotificationsIcon />
+              </Badge>
             </button>
           )}
 
@@ -501,16 +639,32 @@ const AuthenticatedHeader = () => {
               <div className="p-4 overflow-y-auto flex-1">
                 {notifications.length > 0 ? (
                   <List>
-                    {notifications.map((notification, index) => (
-                      <ListItem key={index} divider>
-                        <ListItemText
-                          primary={notification.content}
-                          secondary={new Date(
-                            notification.sent_at
-                          ).toLocaleString()}
-                        />
-                      </ListItem>
-                    ))}
+                    {notifications.map((notification, index) => {
+                      const isNew = isNewNotification(notification.sent_at);
+                      return (
+                        <ListItem
+                          key={index}
+                          divider
+                          className={`${
+                            isNew
+                              ? "bg-green-100 border-green-500"
+                              : "bg-gray-100"
+                          } border rounded-md shadow-sm mb-1`}
+                          style={{
+                            borderBottom: isNew
+                              ? "1px solid #22c55e"
+                              : "1px solid #e0e0e0",
+                          }}
+                        >
+                          <ListItemText
+                            primary={notification.content}
+                            secondary={new Date(
+                              notification.sent_at
+                            ).toLocaleString()}
+                          />
+                        </ListItem>
+                      );
+                    })}
                   </List>
                 ) : (
                   <Typography className="text-gray-500">

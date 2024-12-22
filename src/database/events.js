@@ -1,8 +1,8 @@
 import { supabase } from "./supabase";
 
-export const retrievePendingEvents = async () => {
+export const retrievePendingEvents = async (page = 1, pageSize = 8) => {
   try {
-    const { data, error } = await supabase
+    const { data, error, count } = await supabase
       .from("events")
       .select(
         `
@@ -13,23 +13,27 @@ export const retrievePendingEvents = async () => {
           organizer_email,
           event_location,
           event_type_name
-        )
-      `
+        ),
+        musicians_required(*)
+      `,
+        { count: "exact" } // This ensures you get the total count of events
       )
-      .eq("event_status", "Pending");
+      .eq("event_status", "Pending")
+      .order("date_created", { ascending: false }) // Ensure sorting is based on "date_created"
+      .range((page - 1) * pageSize, page * pageSize - 1); // Apply pagination range
 
     if (error) throw error;
 
-    return data;
+    return { data, count }; // Return data and total count for pagination
   } catch (error) {
     console.error("Error fetching pending events:", error);
     throw error;
   }
 };
 
-export const retrieveRejectedEvents = async () => {
+export const retrieveAcceptedEvents = async (page = 1, pageSize = 8) => {
   try {
-    const { data, error } = await supabase
+    const { data, error, count } = await supabase
       .from("events")
       .select(
         `
@@ -40,48 +44,117 @@ export const retrieveRejectedEvents = async () => {
           organizer_email,
           event_location,
           event_type_name
-        )
-      `
+        ),
+        musicians_required(*)
+      `,
+        { count: "exact" } // Include total count for pagination
       )
-      .eq("event_status", "Rejected");
+      .eq("event_status", "Accepted")
+      .order("date_created", { ascending: false }) // Sort by date, latest first
+      .range((page - 1) * pageSize, page * pageSize - 1); // Paginate results
 
     if (error) throw error;
 
-    return data;
+    return { data, count };
   } catch (error) {
     console.error("Error fetching rejected events:", error);
     throw error;
   }
 };
 
-export const retrieveAcceptedEvents = async () => {
+export const retrieveOngoingEvents = async (page, pageSize) => {
+  const from = (page - 1) * pageSize;
+  const to = from + pageSize - 1;
   try {
-    const { data, error } = await supabase
+    const { data, error, count } = await supabase
       .from("events")
       .select(
         `
         *,
         bookings (
+          booking_id,
           organizer_first_name,
           organizer_last_name,
           organizer_email,
           event_location,
           event_type_name
+        ),
+        musicians_required (
+          guitarist,
+          melodics,
+          vocalist,
+          bassist,
+          percussionist
+        ),
+        participation (
+          user_id,  
+          musician_role,
+          status,
+          members_orgs (
+            id,
+            authid,  
+            email,
+            name,
+            profile_image
+          )
         )
-      `
+      `,
+        { count: "exact" }
       )
-      .eq("event_status", "Accepted");
+      .eq("event_status", "Ongoing")
+      .range(from, to);
 
     if (error) throw error;
 
-    return data;
+    return {
+      data: data.map((event) => {
+        const musicianData = event.musicians_required[0] || {};
+        const roles = {
+          guitarist: {
+            required: musicianData.guitarist || 0,
+            participants: [],
+          },
+          melodics: { required: musicianData.melodics || 0, participants: [] },
+          vocalist: { required: musicianData.vocalist || 0, participants: [] },
+          bassist: { required: musicianData.bassist || 0, participants: [] },
+          percussionist: {
+            required: musicianData.percussionist || 0,
+            participants: [],
+          },
+        };
+
+        // Map participation to the correct roles
+        (event.participation || []).forEach((participant) => {
+          const role = participant.musician_role.toLowerCase();
+          if (roles[role]) {
+            roles[role].participants.push({
+              id: participant.user_id,
+              email: participant.members_orgs.email,
+              name: participant.members_orgs.name,
+              profileImage: participant.members_orgs.profile_image,
+              status: participant.status,
+            });
+          }
+        });
+
+        const totalMusicians =
+          roles.guitarist.required +
+          roles.melodics.required +
+          roles.vocalist.required +
+          roles.bassist.required +
+          roles.percussionist.required;
+
+        return { ...event, totalMusicians, musicians: roles };
+      }),
+      count, // Return total count for pagination
+    };
   } catch (error) {
-    console.error("Error fetching accepted events:", error);
+    console.error("Error fetching ongoing events:", error);
     throw error;
   }
 };
 
-export const retrieveOngoingEvents = async () => {
+export const retrieveHomeOngoingEvents = async () => {
   try {
     const { data, error } = await supabase
       .from("events")
@@ -98,7 +171,7 @@ export const retrieveOngoingEvents = async () => {
         ),
         musicians_required (
           guitarist,
-          keyboardist,
+          melodics,
           vocalist,
           bassist,
           percussionist
@@ -129,8 +202,8 @@ export const retrieveOngoingEvents = async () => {
           required: musicianData.guitarist || 0,
           participants: [],
         },
-        keyboardist: {
-          required: musicianData.keyboardist || 0,
+        melodics: {
+          required: musicianData.melodics || 0,
           participants: [],
         },
         vocalist: {
@@ -163,7 +236,7 @@ export const retrieveOngoingEvents = async () => {
 
       const totalMusicians =
         roles.guitarist.required +
-        roles.keyboardist.required +
+        roles.melodics.required +
         roles.vocalist.required +
         roles.bassist.required +
         roles.percussionist.required;
@@ -180,9 +253,40 @@ export const retrieveOngoingEvents = async () => {
   }
 };
 
-export const retrievePublishedEvents = async () => {
+export const retrieveRejectedEvents = async (page = 1, pageSize = 8) => {
   try {
-    const { data, error } = await supabase
+    const { data, error, count } = await supabase
+      .from("events")
+      .select(
+        `
+        *,
+        bookings (
+          organizer_first_name,
+          organizer_last_name,
+          organizer_email,
+          event_location,
+          event_type_name
+        ),
+        musicians_required(*)
+      `,
+        { count: "exact" } // Include total count for pagination
+      )
+      .eq("event_status", "Rejected")
+      .order("date_created", { ascending: false }) // Sort by date, latest first
+      .range((page - 1) * pageSize, page * pageSize - 1); // Paginate results
+
+    if (error) throw error;
+
+    return { data, count };
+  } catch (error) {
+    console.error("Error fetching rejected events:", error);
+    throw error;
+  }
+};
+
+export const retrievePublishedEvents = async (page = 1, pageSize = 8) => {
+  try {
+    const { data, error, count } = await supabase
       .from("events")
       .select(
         `
@@ -196,7 +300,7 @@ export const retrievePublishedEvents = async () => {
         ),
         musicians_required (
           guitarist,
-          keyboardist,
+          melodics,
           vocalist,
           bassist,
           percussionist
@@ -210,13 +314,17 @@ export const retrievePublishedEvents = async () => {
           musician_role,
           status
         )
-      `
+      `,
+        {
+          count: "exact",
+        }
       )
-      .eq("event_status", "Published");
+      .eq("event_status", "Published")
+      .order("date_created", { ascending: false }) // Sort by date, latest first
+      .range((page - 1) * pageSize, page * pageSize - 1); // Paginate results
 
     if (error) throw error;
-
-    return data.map((event) => {
+    const processedData = data.map((event) => {
       const musicianData = event.musicians_required[0] || {};
 
       const roles = {
@@ -224,8 +332,8 @@ export const retrievePublishedEvents = async () => {
           required: musicianData.guitarist || 0,
           participants: [],
         },
-        keyboardist: {
-          required: musicianData.keyboardist || 0,
+        melodics: {
+          required: musicianData.melodics || 0,
           participants: [],
         },
         vocalist: {
@@ -256,7 +364,7 @@ export const retrievePublishedEvents = async () => {
 
       const totalMusicians =
         roles.guitarist.required +
-        roles.keyboardist.required +
+        roles.melodics.required +
         roles.vocalist.required +
         roles.bassist.required +
         roles.percussionist.required;
@@ -267,15 +375,21 @@ export const retrievePublishedEvents = async () => {
         musicians: roles,
       };
     });
+
+    return {
+      data: processedData,
+      count, // Include the total count of published events
+    };
   } catch (error) {
     console.error("Error fetching ongoing events:", error);
     throw error;
   }
 };
 
-export const fetchPastEvents = async () => {
+export const fetchPastEvents = async (page = 1, pageSize = 8) => {
   try {
-    const { data, error } = await supabase
+    const offset = (page - 1) * pageSize; // Calculate offset for pagination
+    const { data, error, count } = await supabase
       .from("events")
       .select(
         `
@@ -290,7 +404,7 @@ export const fetchPastEvents = async () => {
         ),
         musicians_required (
           guitarist,
-          keyboardist,
+          melodics,
           vocalist,
           bassist,
           percussionist
@@ -307,17 +421,23 @@ export const fetchPastEvents = async () => {
             profile_image
           )
         )
-      `
+    `,
+        { count: "exact" } // Fetch the total count for pagination
       )
-      .lt("end_date", new Date().toISOString())
-      .order("end_date", { ascending: false });
+      .eq("event_status", "Past")
+      .order("end_date", { ascending: false })
+      .range(offset, offset + pageSize - 1);
+    // Apply pagination range
 
-    if (error) throw error;
+    if (error) {
+      console.log(error);
+    }
 
-    return data.map((event) => {
+    // Transform data into the desired structure
+    const transformedData = data.map((event) => {
       const musicians = {
         guitarist: { required: 0, participants: [] },
-        keyboardist: { required: 0, participants: [] },
+        melodics: { required: 0, participants: [] },
         vocalist: { required: 0, participants: [] },
         bassist: { required: 0, participants: [] },
         percussionist: { required: 0, participants: [] },
@@ -353,6 +473,11 @@ export const fetchPastEvents = async () => {
         musicians,
       };
     });
+
+    return {
+      data: transformedData, // Paginated event data
+      count, // Total number of events (for calculating total pages)
+    };
   } catch (error) {
     console.error("Error fetching past events:", error);
     throw error;

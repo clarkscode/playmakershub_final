@@ -1,32 +1,43 @@
-import { useEffect, useState } from "react";
-import EventCard from "./EventCard";
-import { retrieveRejectedEvents } from "../../database/supabase"; // You need to create this function
+import { useState, useEffect } from "react";
+import { retrieveRejectedEvents } from "../../database/events";
+import RejectedEventsTable from "./Reusable/RejectedEventsTable";
 
 const RejectedEvents = () => {
   const [rejectedEvents, setRejectedEvents] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const pageSize = 8; // Number of events per page
+
+  const fetchRejectedEvents = async () => {
+    try {
+      const { data, count } = await retrieveRejectedEvents(
+        currentPage,
+        pageSize
+      );
+      setRejectedEvents(data);
+      setTotalPages(Math.ceil(count / pageSize)); // Calculate total pages
+    } catch (error) {
+      console.error("Error fetching rejected events:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handlePageChange = (newPage) => {
+    if (newPage < 1 || newPage > totalPages) return; // Prevent out-of-bound pages
+    setCurrentPage(newPage);
+  };
 
   useEffect(() => {
-    const fetchRejectedEvents = async () => {
-      try {
-        const data = await retrieveRejectedEvents();
-        // Fetch rejected events from Supabase
-        setRejectedEvents(data);
-        // console.log(data);
-      } catch (error) {
-        console.error("Error fetching rejected events:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
     fetchRejectedEvents();
-  }, []);
+    console.log("rejected", rejectedEvents);
+  }, [currentPage]);
 
   if (loading) {
     return (
       <div className="flex items-center justify-center h-screen">
-        <div className="w-16 h-16 border-4 border-t-transparent border-[#5C1B33]  rounded-full animate-spin"></div>
+        <div className="w-16 h-16 border-4 border-t-transparent border-[#5C1B33] rounded-full animate-spin"></div>
       </div>
     );
   }
@@ -36,31 +47,64 @@ const RejectedEvents = () => {
   }
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-      {rejectedEvents.map((event, index) => (
-        <EventCard
-          key={index}
-          eventId={event.event_id} // Event ID
-          eventTitle={event.event_title} // Event Title
-          organizer={`${event.bookings.organizer_first_name} ${event.bookings.organizer_last_name}`} // Organizer Name
-          email={event.bookings.organizer_email} // Organizer Email
-          location={event.bookings.event_location} // Event Location
-          genre={event.genre}
-          // Event Genre
-          eventStart={{
-            date: event.start_date,
-            time: event.start_time,
-          }}
-          eventEnd={{
-            date: event.end_date,
-            time: event.end_time,
-          }}
-          status={event.event_status} // Event Status (Rejected)
-          department={event.bookings.event_type_name} // Department/Organization
-          participants={event.participants} // Participants
-          maxParticipants={event.maxParticipants} // Max Participants
-        />
-      ))}
+    <div className="space-y-4">
+      <table className="w-full text-left border-collapse border border-gray-300 rounded-lg">
+        <thead className="bg-[#5C1B33] text-white">
+          <tr>
+            <th className="p-3">Event Title</th>
+            <th className="p-3">Organizer</th>
+            <th className="p-3">Email</th>
+            <th className="p-3">View</th>
+          </tr>
+        </thead>
+        <tbody>
+          {rejectedEvents.map((event, index) => (
+            <RejectedEventsTable
+              key={event.event_id}
+              eventId={event.event_id}
+              eventTitle={event.event_title}
+              organizer={`${event.bookings.organizer_first_name} ${event.bookings.organizer_last_name}`}
+              email={event.bookings.organizer_email}
+              location={event.bookings.event_location}
+              genre={event.genre}
+              theme={event.theme}
+              eventStart={{
+                date: event.start_date,
+                time: event.start_time,
+              }}
+              eventEnd={{
+                date: event.end_date,
+                time: event.end_time,
+              }}
+              status={event.event_status}
+              department={event.bookings.event_type_name}
+              requiredParticipants={event.musicians_required}
+              rowIndex={index}
+            />
+          ))}
+        </tbody>
+      </table>
+
+      {/* Pagination Controls */}
+      <div className="flex justify-between items-center mt-4">
+        <button
+          onClick={() => handlePageChange(currentPage - 1)}
+          disabled={currentPage === 1}
+          className="px-4 py-2 bg-gray-300 text-gray-800 rounded hover:bg-gray-400 disabled:opacity-50"
+        >
+          Previous
+        </button>
+        <div>
+          Page {currentPage} of {totalPages}
+        </div>
+        <button
+          onClick={() => handlePageChange(currentPage + 1)}
+          disabled={currentPage === totalPages}
+          className="px-4 py-2 bg-gray-300 text-gray-800 rounded hover:bg-gray-400 disabled:opacity-50"
+        >
+          Next
+        </button>
+      </div>
     </div>
   );
 };

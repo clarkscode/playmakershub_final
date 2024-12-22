@@ -9,18 +9,147 @@ import PersonPinIcon from "@mui/icons-material/PersonPin";
 import LogoutIcon from "@mui/icons-material/Logout";
 import ChatIcon from "@mui/icons-material/Chat";
 import { supabase } from "../../database/supabase";
+import { useState } from "react";
+import { useEffect } from "react";
 
 const Sidebar = () => {
+  const [newNotificationCount, setNewNotificationCount] = useState(0);
+  const [unreadBookingCount, setUnreadBookingCount] = useState(0);
+
   const location = useLocation();
   const navigate = useNavigate();
   const activeStyle = "bg-[#5C1B33] text-white rounded-lg";
   const inactiveStyle = "text-gray-500";
 
+  // Fetch unseen notifications on component mount
+  useEffect(() => {
+    const fetchUnseenNotifications = async () => {
+      const { data, error } = await supabase
+        .from("notifications")
+        .select("is_seen, notification_type")
+        .eq("is_seen", false)
+        .in("notification_type", ["New Booking", "backout", "joined"]); // Filter by notification_type
+
+      if (error) {
+        console.error("Error fetching unseen notifications:", error);
+      } else {
+        setNewNotificationCount(data.length); // Set count of unseen notifications
+      }
+    };
+
+    const fetchUnreadBookings = async () => {
+      try {
+        // Fetch all booking_ids with unread messages
+        const { data, error } = await supabase
+          .from("chats")
+          .select("booking_id")
+          .eq("is_seen", false);
+
+        if (error) throw error;
+
+        // Use a Set to get unique booking_ids
+        const uniqueBookingIds = new Set(data.map((chat) => chat.booking_id));
+
+        // Set the count of distinct bookings with unread messages
+        setUnreadBookingCount(uniqueBookingIds.size);
+      } catch (error) {
+        console.error("Error fetching unread bookings:", error.message);
+      }
+    };
+
+    fetchUnreadBookings();
+    fetchUnseenNotifications();
+  }, []);
+
+  useEffect(() => {
+    const channel = supabase
+      .channel("realtime-chats")
+      .on(
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: "chats" },
+        async (payload) => {
+          if (!payload.new.is_seen) {
+            // Fetch all booking_ids again and count unique ones
+            const { data, error } = await supabase
+              .from("chats")
+              .select("booking_id")
+              .eq("is_seen", false);
+
+            if (!error) {
+              const uniqueBookingIds = new Set(
+                data.map((chat) => chat.booking_id)
+              );
+              setUnreadBookingCount(uniqueBookingIds.size);
+              playMessageSound();
+            }
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, []);
+
+  // Subscribe to new notifications and update the count
+  useEffect(() => {
+    const subscription = supabase
+      .channel("realtime-notifications")
+      .on(
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: "notifications" },
+        (payload) => {
+          if (
+            payload.new.notification_type === "New Booking" && // Only for "New Booking"
+            location.pathname !== "/admin/notification"
+          ) {
+            setNewNotificationCount((prev) => prev + 1);
+            playNotificationSound();
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(subscription);
+    };
+  }, [location.pathname]);
+
+  const playNotificationSound = () => {
+    const audio = new Audio("/sound/notifications.mp3");
+    audio.play();
+  };
+  const playMessageSound = () => {
+    const audio = new Audio("/sound/message.mp3");
+    audio.play();
+  };
+
   const handleLogout = () => {
     supabase.auth.signOut();
     localStorage.removeItem("adminAuthToken");
     sessionStorage.removeItem("adminAuthToken");
-    navigate("/adminonly");
+    // navigate("/adminonly"); already change this
+    navigate("/member/login");
+  };
+
+  // Mark "New Booking" notifications as seen
+  const markNewBookingNotificationsAsSeen = async () => {
+    try {
+      const { error } = await supabase
+        .from("notifications")
+        .update({ is_seen: true })
+        .eq("is_seen", false)
+        .in("notification_type", ["New Booking", "backout", "joined"]); // Update only "New Booking, backout, joined" notifications
+
+      if (error) {
+        console.error("Error marking notifications as seen:", error);
+      } else {
+        setNewNotificationCount(0); // Reset the notification count
+      }
+    } catch (err) {
+      console.error("Error during notification update:", err);
+    }
   };
 
   return (
@@ -119,14 +248,22 @@ const Sidebar = () => {
                 ? activeStyle
                 : inactiveStyle
             }`}
+            onClick={markNewBookingNotificationsAsSeen}
           >
-            <NotificationsIcon
-              className={`mr-2 ${
-                location.pathname === "/admin/notification"
-                  ? "text-white"
-                  : "text-gray-500"
-              }`}
-            />
+            <div className="relative">
+              <NotificationsIcon
+                className={`mr-2 ${
+                  location.pathname === "/admin/notification"
+                    ? "text-white"
+                    : "text-gray-500"
+                }`}
+              />
+              {newNotificationCount > 0 && (
+                <span className="absolute top-0 right-0 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                  {newNotificationCount}
+                </span>
+              )}
+            </div>
             Notification
           </Link>
         </li>
@@ -137,13 +274,20 @@ const Sidebar = () => {
               location.pathname === "/admin/chat" ? activeStyle : inactiveStyle
             }`}
           >
-            <ChatIcon
-              className={`mr-2 ${
-                location.pathname === "/admin/chat"
-                  ? "text-white"
-                  : "text-gray-500"
-              }`}
-            />
+            <div className="relative">
+              <ChatIcon
+                className={`mr-2 ${
+                  location.pathname === "/admin/chat"
+                    ? "text-white"
+                    : "text-gray-500"
+                }`}
+              />
+              {unreadBookingCount > 0 && (
+                <span className="absolute top-[-6px] right-[-6px] bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                  {unreadBookingCount}
+                </span>
+              )}
+            </div>
             Chat
           </Link>
         </li>
@@ -168,15 +312,17 @@ const Sidebar = () => {
         </li>
         <li>
           <Link
-            to="/adminonly"
+            to="/member/login"
             className={`flex items-center py-3 px-4 text-md font-medium ${
-              location.pathname === "/adminonly" ? activeStyle : inactiveStyle
+              location.pathname === "/member/login"
+                ? activeStyle
+                : inactiveStyle
             }`}
             onClick={handleLogout}
           >
             <LogoutIcon
               className={`mr-2 ${
-                location.pathname === "/adminonly"
+                location.pathname === "/member/login"
                   ? "text-white"
                   : "text-gray-500"
               }`}

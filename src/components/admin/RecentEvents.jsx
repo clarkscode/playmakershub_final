@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react';
-import { fetchEvents } from '../../api/supabase'; // Adjust the path as needed
+import { useEffect, useState } from "react";
+import { fetchEvents } from "../../database/events";
 
 export const RecentAddedEvents = () => {
   const [events, setEvents] = useState([]);
@@ -28,10 +28,10 @@ export const RecentAddedEvents = () => {
             <li key={event.event_id}>
               <h3>{event.event_title}</h3>
               <p>
-                {event.start_date} - {event.end_date} ({event.start_time} to{' '}
+                {event.start_date} - {event.end_date} ({event.start_time} to{" "}
                 {event.end_time})
               </p>
-              <p>{event.genre || 'No genre specified'}</p>
+              <p>{event.genre || "No genre specified"}</p>
             </li>
           ))}
         </ul>

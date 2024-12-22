@@ -10,7 +10,6 @@ const AdminNotification = () => {
   const [notifications, setNotifications] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-
   const [hasInitialized, setHasInitialized] = useState(false);
 
   useEffect(() => {
@@ -100,7 +99,7 @@ const AdminNotification = () => {
     try {
       const { data: required, error: requiredError } = await supabase
         .from("musicians_required")
-        .select("guitarist, keyboardist, vocalist, bassist, percussionist")
+        .select("guitarist, melodics, vocalist, bassist, percussionist")
         .eq("event_id", eventId)
         .maybeSingle();
 
@@ -126,7 +125,7 @@ const AdminNotification = () => {
 
       const totalRequired =
         (required.guitarist || 0) +
-        (required.keyboardist || 0) +
+        (required.melodics || 0) +
         (required.vocalist || 0) +
         (required.bassist || 0) +
         (required.percussionist || 0);

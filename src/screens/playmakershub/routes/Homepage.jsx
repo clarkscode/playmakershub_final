@@ -2,11 +2,7 @@ import { useState, useRef, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import {
-  createBookingProcess,
-  fetchBookingStatus,
-  supabase,
-} from "../../../database/supabase";
+import { supabase } from "../../../database/supabase";
 import BookingForm from "../../../components/playmakershub/BookingForm";
 // React Icons
 import { FaInfoCircle } from "react-icons/fa";
@@ -14,6 +10,10 @@ import sendEmail from "../../../database/sendEmail";
 import Navbar from "../../../components/admin/testing/Navbar";
 import { supabaseAdmin } from "../../../database/supabaseAdmin";
 import sendEmailTwo from "../../../database/sendEmailTwo";
+import {
+  createBookingProcess,
+  fetchBookingStatus,
+} from "../../../database/bookings";
 
 const Homepage = () => {
   const [popupVisible, setPopupVisible] = useState(false);
@@ -27,6 +27,8 @@ const Homepage = () => {
   const [isViewMode, setIsViewMode] = useState(false);
   const [bookingStatus, setBookingStatus] = useState("Pending");
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [fetchedBookingID, setFetchedBookingID] = useState("");
+  const [errors, setErrors] = useState({}); // Add errors state
 
   const navigate = useNavigate();
   const modalRef = useRef(null);
@@ -50,7 +52,7 @@ const Homepage = () => {
     guitarist: 0,
     vocalist: 0,
     bassist: 0,
-    keyboardist: 0,
+    melodics: 0,
     percussionist: 0,
     description: "",
   });
@@ -73,9 +75,55 @@ const Homepage = () => {
     guitarist: 0,
     vocalist: 0,
     bassist: 0,
-    keyboardist: 0,
+    melodics: 0,
     percussionist: 0,
     description: "",
+  };
+
+  // Real-time field validation
+  const validateField = (name, value) => {
+    let error = "";
+    if (!value) {
+      error = "This field is required.";
+    } else if (name === "email" && !/\S+@\S+\.\S+/.test(value)) {
+      error = "Invalid email address.";
+    } else if (name === "startTime" || name === "endTime") {
+      const time = parseInt(value.split(":")[0], 10); // Extract hour
+      if (time < 8 || time > 21) {
+        error = "Time must be between 8:00 AM and 9:00 PM.";
+      }
+    }
+    setErrors((prev) => ({ ...prev, [name]: error }));
+  };
+
+  const validateBeforeSubmit = () => {
+    const newErrors = {};
+
+    // Check Event Type Name
+    if (!formData.eventTypeName.trim()) {
+      newErrors.eventTypeName = "Department/Organization Name is required";
+    }
+
+    // Check Genre/Theme
+    if (formData.genreThemeHolder === "Genre" && !formData.genre.trim()) {
+      newErrors.genre = "Genre Description is required";
+    } else if (
+      formData.genreThemeHolder === "Theme" &&
+      !formData.theme.trim()
+    ) {
+      newErrors.theme = "Theme Description is required";
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0; // If no errors, return true
+  };
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData({ ...formData, [name]: value });
+
+    // Run validation in real-time
+    validateField(name, value);
   };
 
   const today = new Date().toISOString().split("T")[0];
@@ -137,26 +185,53 @@ const Homepage = () => {
       });
 
       // Step 3: Send personalized emails for each role
-      const emailPromises = Object.entries(roleMapping).flatMap(
-        ([role, users]) =>
-          users.map((user) => {
-            const subject = "New Booking Request Received";
-            const content = `
-          <p>Greetings ${role}: ${user.name},</p>
-          <p>A booking request titled "<strong>${eventName}</strong>" has been received. <a href="https://www.playmakershub.org/adminonly" target="_blank">here</a></p></p>
-          <p>Kindly visit your admin page's pending events to review the details.</p>
-         <p>Best Regards,<br/>The Playmakers Family</p>
-          <a href="https://www.playmakershub.org" target="_blank">www.playmakershub.org</a></p>
+
+      const emailPromises = [];
+      for (const [role, users] of Object.entries(roleMapping)) {
+        for (const user of users) {
+          const emailContent = `
+          <p>Dear ${role}: ${user.name},</p>
+          <p>A new booking request titled "<strong>${eventName}</strong>" has been submitted.</p>
+          <p>
+            Please visit your admin dashboard to review the event. 
+            <a href="https://www.playmakershub.org/adminonly" target="_blank">View Admin Dashboard</a>
+          </p>
+          <p>Best Regards,<br>The Playmakers Family</p>
         `;
-            // Send email to the admin
-            return sendEmailTwo(user.email, subject, content);
-          })
-      );
 
-      // Await all email sending
+          emailPromises.push(
+            sendEmailTwo(
+              user.email,
+              "New Booking Request Received",
+              emailContent
+            )
+          );
+        }
+      }
+
+      // Insert notifications into database
+      const notificationContent = `A new booking titled "${eventName}" has been received.`;
+      const notificationInsert = await supabase.from("notifications").insert([
+        {
+          event_id: bookingID,
+          notification_type: "New Booking",
+          content: notificationContent,
+          user_id: null,
+          sent_at: new Date(),
+        },
+      ]);
+
+      if (notificationInsert.error) {
+        console.error(
+          "Error inserting notification:",
+          notificationInsert.error
+        );
+        throw new Error("Failed to insert notification.");
+      }
+
+      // Wait for all email promises to resolve
       await Promise.all(emailPromises);
-
-      console.log("Emails sent successfully to all admins.");
+      console.log("Emails successfully sent to all admins.");
     } catch (error) {
       console.error("Error notifying admins:", error);
     }
@@ -168,17 +243,11 @@ const Homepage = () => {
         data: { session },
       } = await supabase.auth.getSession();
       setIsAuthenticated(!!session);
-      console.log("Homepage - user has session", session);
+      // console.log("Homepage - user has session", session);
     } catch (error) {
       console.error("Error checking user authentication:", error.message);
       toast.error("Failed to check authentication status.");
     }
-  };
-
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-
-    setFormData((prevData) => ({ ...prevData, [name]: value }));
   };
 
   useEffect(() => {
@@ -202,17 +271,6 @@ const Homepage = () => {
     checkIsUserAuthenticated();
   }, []);
 
-  // Function to fetch and set booking status
-  const fetchAndSetBookingStatus = async (bookingID) => {
-    try {
-      const status = await fetchBookingStatus(bookingID);
-      setBookingStatus(status);
-    } catch (error) {
-      console.error("Failed to fetch booking status:", error);
-      toast.error("Could not retrieve booking status.");
-    }
-  };
-
   const handleCaptchaVerify = (value) => {
     setCaptchaVerified(!!value);
   };
@@ -222,7 +280,7 @@ const Homepage = () => {
     formData.guitarist > 0 ||
     formData.vocalist > 0 ||
     formData.bassist > 0 ||
-    formData.keyboardist > 0 ||
+    formData.melodics > 0 ||
     formData.percussionist > 0;
 
   const validateDateTime = () => {
@@ -233,6 +291,10 @@ const Homepage = () => {
     const todayDate = new Date(today);
     const now = new Date();
 
+    // Booking time constraints
+    const allowedStartHour = 8; // 8:00 AM
+    const allowedEndHour = 21; // 9:00 PM
+
     // Ensure start date is not in the past
     if (startDate < todayDate) {
       toast.error("Start date cannot be in the past.");
@@ -242,6 +304,21 @@ const Homepage = () => {
     // Ensure end date is not before start date
     if (endDate < startDate) {
       toast.error("End date cannot be earlier than start date.");
+      return false;
+    }
+
+    // Ensure start time is within allowed hours
+    if (
+      start.getHours() < allowedStartHour ||
+      start.getHours() >= allowedEndHour
+    ) {
+      toast.error("Start time must be between 8:00 AM and 9:00 PM.");
+      return false;
+    }
+
+    // Ensure end time is within allowed hours
+    if (end.getHours() < allowedStartHour || end.getHours() > allowedEndHour) {
+      toast.error("End time must be between 8:00 AM and 9:00 PM.");
       return false;
     }
 
@@ -284,16 +361,17 @@ const Homepage = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (!validateDateTime()) {
-      return; // stop submission if validation fails
+    if (!validateBeforeSubmit() || !validateDateTime()) {
+      // toast.error("Please correct the errors before submitting.");
+      return;
     }
 
     // Email domain validation
-    const emailDomain = formData.email.split("@")[1];
-    if (emailDomain !== "ustp.edu.ph") {
-      toast.error("You are not allowed to book.");
-      return;
-    }
+    // const emailDomain = formData.email.split("@")[1];
+    // if (emailDomain !== "ustp.edu.ph") {
+    //   toast.error("You are not allowed to book.");
+    //   return;
+    // }
 
     // Check if CAPTCHA is verified
     if (!captchaVerified) {
@@ -309,8 +387,10 @@ const Homepage = () => {
     try {
       // Call the booking process
       const result = await createBookingProcess(formData);
-      const bookingID = result.bookingData[0].booking_id;
-      setBookingID(bookingID);
+      // const bookingID = result.bookingData[0]?.booking_id;
+      const bookNumber = result.bookingData[0]?.book_number;
+
+      setBookingID(bookNumber);
 
       //organizer's full name dynamically
       const organizerName = `${formData.firstName} ${formData.lastName}`;
@@ -319,7 +399,7 @@ const Homepage = () => {
       const emailContent = `
           <p>Dear ${organizerName},</p>
           <p>Your booking for the event titled "${formData.title}" has been successfully created!</p>
-          <p>Here is your booking ID: <strong>${bookingID}</strong></p>
+          <p>Here is your booking ID: <strong>${bookNumber}</strong></p>
           <p>Please remember to keep this booking ID safe. You will need it if you want to make clarifications, updates, or cancellations for your booking.</p>
           <p>Best Regards,<br/>The Playmakers Family</p>
           <a href="https://www.playmakershub.org" target="_blank">www.playmakershub.org</a></p>
@@ -343,22 +423,41 @@ const Homepage = () => {
   };
 
   const handleBookingIDSubmit = async () => {
+    if (!enteredBookingID || enteredBookingID.trim() === "") {
+      toast.error("Booking ID cannot be empty.");
+      return;
+    }
     try {
-      const { data, error } = await supabase
+      const { data: booked, error } = await supabase
+        .from("bookings")
+        .select("booking_id")
+        .eq("book_number", enteredBookingID)
+        .single();
+
+      if (error || !booked) {
+        toast.error("Booking number not found.");
+        console.error("handleBookingIDSubmit error:", error);
+        return;
+      }
+
+      const bookingID = booked.booking_id;
+      setFetchedBookingID(bookingID);
+
+      const { data, error: detailsError } = await supabase
         .from("bookings")
         .select(
           `
-        *,
-        events (
           *,
-          musicians_required (*)
+          events (
+            *,
+            musicians_required (*)
+          )
+        `
         )
-      `
-        )
-        .eq("booking_id", enteredBookingID)
+        .eq("booking_id", bookingID)
         .single();
 
-      if (error) throw error;
+      if (detailsError) throw detailsError;
 
       if (data) {
         // Check if the event status is "Pending" and set isEditMode accordingly
@@ -366,9 +465,10 @@ const Homepage = () => {
         setIsEditMode(isEditable);
         setIsViewMode(!isEditable);
         // Fetch and set the booking status
-        await fetchAndSetBookingStatus(enteredBookingID);
+        await fetchAndSetBookingStatus(bookingID);
+        // console.log("fetchedBookingID", bookingID);
 
-        console.log("FETCHED DATA", data.events[0].event_id);
+        // console.log("FETCHED DATA", data.events[0].event_id);
 
         // Extracting and organizing fetched data into the formData structure
         setFetchedData({
@@ -395,7 +495,7 @@ const Homepage = () => {
           guitarist: data.events[0]?.musicians_required[0]?.guitarist,
           vocalist: data.events[0]?.musicians_required[0]?.vocalist,
           bassist: data.events[0]?.musicians_required[0]?.bassist,
-          keyboardist: data.events[0]?.musicians_required[0]?.keyboardist,
+          melodics: data.events[0]?.musicians_required[0]?.melodics,
           percussionist: data.events[0]?.musicians_required[0]?.percussionist,
         });
         if (!isEditable) {
@@ -430,7 +530,7 @@ const Homepage = () => {
           event_type: formData.eventType,
           event_type_name: formData.eventTypeName,
         })
-        .eq("booking_id", enteredBookingID);
+        .eq("booking_id", fetchedBookingID);
 
       if (bookingError) throw bookingError;
 
@@ -447,7 +547,7 @@ const Homepage = () => {
           theme: formData.theme,
           description: formData.description,
         })
-        .eq("booking_id", enteredBookingID);
+        .eq("booking_id", fetchedBookingID);
 
       if (eventError) throw eventError;
 
@@ -455,7 +555,7 @@ const Homepage = () => {
       const { data: eventData, error: fetchEventError } = await supabase
         .from("events")
         .select("event_id")
-        .eq("booking_id", enteredBookingID)
+        .eq("booking_id", fetchedBookingID)
         .single();
 
       if (fetchEventError || !eventData) throw fetchEventError;
@@ -469,7 +569,7 @@ const Homepage = () => {
           guitarist: formData.guitarist,
           vocalist: formData.vocalist,
           bassist: formData.bassist,
-          keyboardist: formData.keyboardist,
+          melodics: formData.melodics,
           percussionist: formData.percussionist,
         })
         .eq("event_id", eventId);
@@ -532,11 +632,22 @@ const Homepage = () => {
         guitarist: fetchedData.guitarist,
         vocalist: fetchedData.vocalist,
         bassist: fetchedData.bassist,
-        keyboardist: fetchedData.keyboardist,
+        melodics: fetchedData.melodics,
         percussionist: fetchedData.percussionist,
       });
     }
   }, [fetchedData]);
+
+  // Function to fetch and set booking status
+  const fetchAndSetBookingStatus = async (bookingID) => {
+    try {
+      const status = await fetchBookingStatus(bookingID);
+      setBookingStatus(status);
+    } catch (error) {
+      console.error("fetchAndSetBookingStatus error Homepage", error);
+      toast.error("Could not retrieve booking status.");
+    }
+  };
 
   return (
     <div className="bg-Radial h-screen bg-[#000000]">
@@ -583,6 +694,7 @@ const Homepage = () => {
             handleBookingIDSubmit={handleBookingIDSubmit}
             enteredBookingID={enteredBookingID}
             setEnteredBookingID={setEnteredBookingID}
+            fetchedBookingID={fetchedBookingID}
             captchaVerified={captchaVerified}
             handleCaptchaVerify={handleCaptchaVerify}
             modalRef={modalRef}
@@ -592,6 +704,8 @@ const Homepage = () => {
             onClose={onClose}
             status={bookingStatus}
             isMusiciansValid={isMusiciansValid}
+            errors={errors} // Pass errors state
+            handleValidation={validateField} // Pass validation logic
           />
         </div>
       )}
@@ -602,8 +716,10 @@ const Homepage = () => {
             <p className="text-xl text-white mb-4">
               Booking Successfully Sent!
             </p>
-            <div className="flex items-center mb-4">
-              <p className="text-sm text-gray-300 mr-2">Your Booking ID:</p>
+            <div className="flex items-center">
+              <p className="text-lg text-[#C1C2D3] font-semibold mr-2">
+                Booking ID has been sent to your email
+              </p>
               <FaInfoCircle
                 onMouseEnter={() => setShowTooltip(true)}
                 onMouseLeave={() => setShowTooltip(false)}
@@ -616,14 +732,9 @@ const Homepage = () => {
                 </div>
               )}
             </div>
-            <div className="flex items-center">
-              <p className="text-lg text-[#C1C2D3] font-semibold mr-2">
-                Booking ID has been sent to your email, check on spam
-              </p>
-            </div>
             <button
               onClick={() => setBookingID(null)}
-              className="w-full bg-[#b70039] text-white py-2 rounded-lg cursor-pointer mt-4"
+              className="w-full bg-[#40B267] text-white py-2 rounded-lg cursor-pointer mt-4"
             >
               OK
             </button>

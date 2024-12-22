@@ -54,13 +54,19 @@ const MemberForm = ({
   const [previewImage, setPreviewImage] = useState(null);
   const [errors, setErrors] = useState({});
   const [formIsValid, setFormIsValid] = useState(false);
+  const [newRole, setNewRole] = useState("");
+  /* 
+  ✅
+  Ang mga roles sa Create Member(tong 5) kai butangan og Others para makadugang ang playmakers og new role tas e change ang keyboardist -> Melodics ana jayvee 
+
+  */
 
   // Hardcoded lists for roles and genres
   const availableRoles = [
     "guitarist",
     "vocalist",
     "bassist",
-    "keyboardist",
+    "melodics",
     "percussionist",
   ];
   const availableGenres = [
@@ -81,8 +87,38 @@ const MemberForm = ({
       // Add the role if fewer than 2 are selected
       setRoles([...roles, role]);
     } else {
-      toast.error("You can select only 2 roles.");
+      toast.error("You can only select 2 roles in total.");
     }
+  };
+
+  // Handle adding a custom role
+  const handleAddCustomRole = () => {
+    if (newRole) {
+      const roleToAdd = newRole.trim().toLowerCase();
+
+      // Check if the total number of roles (predefined + custom) is already 2
+      if (roles.length >= 2) {
+        toast.error("You can only select 2 roles in total.");
+        return;
+      }
+
+      if (!roles.includes(roleToAdd)) {
+        setRoles((prev) => [...prev, roleToAdd]);
+        setNewRole(""); // Clear input field
+      } else {
+        toast.error("This role already exists.");
+      }
+    }
+  };
+
+  // Function to remove a custom role
+  const handleRemoveRole = (roleToRemove) => {
+    setRoles((prev) => prev.filter((role) => role !== roleToRemove));
+  };
+
+  // Function to remove a genre
+  const handleRemoveGenre = (genreToRemove) => {
+    setGenres((prev) => prev.filter((genre) => genre !== genreToRemove));
   };
 
   // Handle genre selection
@@ -232,6 +268,18 @@ const MemberForm = ({
         error={errors.roles}
       />
 
+      {/* Custom Role Input */}
+      <TagInput
+        label="Other Roles"
+        value={newRole}
+        items={roles.filter((role) => !availableRoles.includes(role))} // Display only custom roles
+        onAdd={handleAddCustomRole}
+        onChange={(e) => setNewRole(e.target.value)}
+        // error={errors.roles}
+        onRemove={handleRemoveRole}
+        placeholder="Enter other role"
+      />
+
       {/* Genres */}
       <TagInput
         label="Genre(s)"
@@ -241,6 +289,7 @@ const MemberForm = ({
         onChange={(e) => setNewGenre(e.target.value)}
         error={errors.genres}
         placeholder="Enter genre"
+        onRemove={handleRemoveGenre}
         examples={availableGenres}
       />
 
@@ -371,6 +420,7 @@ const TagInput = ({
   onChange,
   error,
   placeholder,
+  onRemove,
   examples,
 }) => (
   <div className="mb-4">
@@ -399,12 +449,19 @@ const TagInput = ({
     </div>
     <div className="mt-2 flex flex-wrap gap-2">
       {items.map((item, index) => (
-        <span
+        <div
           key={index}
-          className="px-2 py-1 bg-blue-100 text-blue-700 rounded-full text-sm"
+          className="flex items-center bg-blue-100 text-blue-700 px-2 py-1 rounded-full text-sm"
         >
-          {item}
-        </span>
+          <span>{item}</span>
+          <button
+            type="button"
+            onClick={() => onRemove(item)} // Call remove function
+            className="ml-2 text-red-500 hover:text-red-700"
+          >
+            &times;
+          </button>
+        </div>
       ))}
     </div>
     {error && <p className="text-red-500 text-sm mt-1">{error}</p>}

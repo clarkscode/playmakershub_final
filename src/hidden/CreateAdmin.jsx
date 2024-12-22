@@ -20,7 +20,7 @@ const CreateAdmin = () => {
   const [lastName, setLastName] = useState("");
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
-  const [role, setRole] = useState("President");
+  const [role, setRole] = useState("");
   const [availableRoles, setAvailableRoles] = useState([
     "President",
     "Vice President (Internal)",
@@ -59,6 +59,20 @@ const CreateAdmin = () => {
           Developer: existingRoles.filter((role) => role === "Developer")
             .length,
         };
+
+        // Determine the default role based on availability
+        let defaultRole = "";
+        if (!roleCounts.President) {
+          defaultRole = "President";
+        } else if (!roleCounts["Vice President (Internal)"]) {
+          defaultRole = "Vice President (Internal)";
+        } else if (!roleCounts["Vice President (External)"]) {
+          defaultRole = "Vice President (External)";
+        } else {
+          defaultRole = "Developer";
+        }
+
+        setRole(defaultRole); // Set the default role dynamically
 
         // Remove roles from the dropdown if they already exist
         const updatedRoles = [
@@ -148,7 +162,7 @@ const CreateAdmin = () => {
       setEmail("");
       setFirstName("");
       setLastName("");
-      setRole("President");
+      setRole("");
     } catch (err) {
       console.error("Error creating admin:", err);
       setError("An unexpected error occurred.");
@@ -207,7 +221,10 @@ const CreateAdmin = () => {
             </label>
             <select
               value={role}
-              onChange={(e) => setRole(e.target.value)}
+              onChange={(e) => {
+                setRole(e.target.value);
+                console.log("Selected Role:", e.target.value);
+              }}
               className="mt-1 p-2 w-full border rounded bg-white"
               disabled={availableRoles.length === 0}
             >

@@ -1,8 +1,9 @@
 import ReCAPTCHA from "react-google-recaptcha";
 import { useEffect, useState } from "react";
-import { insertFeedback, supabase } from "../../database/supabase";
+import { supabase } from "../../database/supabase";
 import EventFeedback from "../admin/Reusable/EventFeedback";
 import { toast } from "react-toastify";
+import { insertFeedback } from "../../database/feedback";
 
 const BookingForm = ({
   formData,
@@ -13,6 +14,7 @@ const BookingForm = ({
   handleBookingIDSubmit,
   enteredBookingID,
   setEnteredBookingID,
+  fetchedBookingID,
   modalRef,
   today,
   isEditMode,
@@ -21,6 +23,8 @@ const BookingForm = ({
   captchaVerified,
   status,
   isMusiciansValid,
+  errors,
+  handleValidation,
 }) => {
   const [bookingIDPopupVisible, setBookingIDPopupVisible] = useState(false);
   const [chatMessages, setChatMessages] = useState([]);
@@ -66,19 +70,27 @@ const BookingForm = ({
   };
 
   const checkBookingStatus = async (bookingID) => {
+    if (!bookingID || bookingID.trim() === "") {
+      console.error("Invalid booking ID");
+      toast.error("Booking ID cannot be empty.");
+      return;
+    }
+
     const { data, error } = await supabase
       .from("events")
       .select("event_status")
       .eq("booking_id", bookingID)
       .single();
 
-    if (!error) {
-      setIsBookingPending(data.event_status === "Pending");
+    if (error) {
+      console.log(error);
     }
+
+    setIsBookingPending(data.event_status === "Pending");
   };
 
   const fetchChatMessages = async () => {
-    const bookingID = enteredBookingID;
+    const bookingID = fetchedBookingID;
     if (bookingID && isBookingPending) {
       const { data, error } = await supabase
         .from("chats")
@@ -95,7 +107,7 @@ const BookingForm = ({
   };
 
   const handleSendMessage = async () => {
-    const bookingID = enteredBookingID;
+    const bookingID = fetchedBookingID;
 
     if (newMessage.trim() && bookingID && isBookingPending) {
       const { error } = await supabase.from("chats").insert([
@@ -112,7 +124,7 @@ const BookingForm = ({
   };
 
   useEffect(() => {
-    const bookingID = enteredBookingID;
+    const bookingID = fetchedBookingID;
     if (isEditMode && bookingID) {
       checkBookingStatus(bookingID).then(() => {
         if (isBookingPending) fetchChatMessages();
@@ -149,23 +161,24 @@ const BookingForm = ({
         };
       });
     }
-  }, [isEditMode, enteredBookingID, isBookingPending]);
+  }, [isEditMode, fetchedBookingID, isBookingPending]);
 
   // Fetch the event ID based on the entered booking ID
   useEffect(() => {
     const fetchEventID = async () => {
-      if (enteredBookingID) {
+      if (fetchedBookingID) {
         try {
           const { data, error } = await supabase
             .from("events")
             .select("event_id")
-            .eq("booking_id", enteredBookingID)
+            .eq("booking_id", fetchedBookingID)
             .single();
 
           if (error) {
             console.error("Error fetching event ID:", error);
           } else {
             setEventID(data?.event_id);
+            // console.log("fetchEventID", data?.event_id);
           }
         } catch (err) {
           console.error("Unexpected error fetching event ID:", err);
@@ -174,7 +187,7 @@ const BookingForm = ({
     };
 
     fetchEventID();
-  }, [enteredBookingID]); // Dependency array ensures this runs when enteredBookingID changes
+  }, [fetchedBookingID]); // Dependency array ensures this runs when enteredBookingID changes
 
   // Fetch feedback submission status from the event_feedback table
   useEffect(() => {
@@ -443,7 +456,12 @@ const BookingForm = ({
             placeholder="Event Title"
             required
             disabled={isDisabled}
+            onBlur={(e) => handleValidation(e.target.name, e.target.value)}
           />
+          {/* display error */}
+          {errors.title && (
+            <p className="text-red-500 text-sm">{errors.title}</p>
+          )}
         </div>
 
         {/* Event Type, Dates, First Name, Last Name, etc. */}
@@ -471,18 +489,25 @@ const BookingForm = ({
               type="text"
               name="eventTypeName"
               value={formData.eventTypeName}
-              onChange={handleChange}
+              onChange={(e) => {
+                handleChange(e);
+                handleValidation(e.target.name, e.target.value);
+              }}
               className="w-full bg-[#C1C2D3] text-black p-2 rounded-lg mt-1 placeholder-gray-500"
               placeholder="Department/Organization Name"
               required
               disabled={isDisabled}
+              onBlur={(e) => handleValidation(e.target.name, e.target.value)}
             />
+            {errors.eventTypeName && (
+              <p className="text-red-500 text-sm">{errors.eventTypeName}</p>
+            )}
           </div>
         </div>
 
         {/* Dates */}
-        <div className="flex justify-between mb-4">
-          <div className="w-[48%]">
+        <div className="mb-4">
+          <div>
             <label htmlFor="startDate" className="block text-sm text-gray-400">
               Start Date
             </label>
@@ -491,13 +516,20 @@ const BookingForm = ({
               name="startDate"
               min={today}
               value={formData.startDate}
-              onChange={handleChange}
+              onChange={(e) => {
+                handleChange(e);
+                handleValidation(e.target.name, e.target.value);
+              }}
               className="w-full bg-[#C1C2D3] text-black p-2 rounded-lg mt-1"
               required
               disabled={isDisabled}
+              onBlur={(e) => handleValidation(e.target.name, e.target.value)}
             />
+            {errors.startDate && (
+              <p className="text-red-500 text-sm">{errors.startDate}</p>
+            )}
           </div>
-          <div className="w-[48%]">
+          <div>
             <label htmlFor="endDate" className="block text-sm text-gray-400">
               End Date
             </label>
@@ -506,11 +538,18 @@ const BookingForm = ({
               name="endDate"
               min={formData.startDate || today}
               value={formData.endDate}
-              onChange={handleChange}
+              onChange={(e) => {
+                handleChange(e);
+                handleValidation(e.target.name, e.target.value);
+              }}
               className="w-full bg-[#C1C2D3] text-black p-2 rounded-lg mt-1"
               required
               disabled={isDisabled}
+              onBlur={(e) => handleValidation(e.target.name, e.target.value)}
             />
+            {errors.endDate && (
+              <p className="text-red-500 text-sm">{errors.endDate}</p>
+            )}
           </div>
         </div>
 
@@ -524,11 +563,18 @@ const BookingForm = ({
               type="time"
               name="startTime"
               value={formData.startTime}
-              onChange={handleChange}
+              onChange={(e) => {
+                handleChange(e);
+                handleValidation(e.target.name, e.target.value);
+              }}
               className="w-full bg-[#C1C2D3] text-black p-2 rounded-lg mt-1"
               required
               disabled={isDisabled}
+              onBlur={(e) => handleValidation(e.target.name, e.target.value)}
             />
+            {errors.startTime && (
+              <p className="text-red-500 text-sm">{errors.startTime}</p>
+            )}
           </div>
           <div className="w-[48%]">
             <label htmlFor="endTime" className="block text-sm text-gray-400">
@@ -538,11 +584,18 @@ const BookingForm = ({
               type="time"
               name="endTime"
               value={formData.endTime}
-              onChange={handleChange}
+              onChange={(e) => {
+                handleChange(e);
+                handleValidation(e.target.name, e.target.value);
+              }}
               className="w-full bg-[#C1C2D3] text-black p-2 rounded-lg mt-1"
               required
               disabled={isDisabled}
+              onBlur={(e) => handleValidation(e.target.name, e.target.value)}
             />
+            {errors.endTime && (
+              <p className="text-red-500 text-sm">{errors.endTime}</p>
+            )}
           </div>
         </div>
 
@@ -556,12 +609,19 @@ const BookingForm = ({
               type="text"
               name="firstName"
               value={formData.firstName}
-              onChange={handleChange}
+              onChange={(e) => {
+                handleChange(e);
+                handleValidation(e.target.name, e.target.value);
+              }}
               className="w-full bg-[#C1C2D3] text-black p-2 rounded-lg mt-1 placeholder-gray-500"
               placeholder="First Name"
               required
               disabled={isDisabled}
+              onBlur={(e) => handleValidation(e.target.name, e.target.value)}
             />
+            {errors.firstName && (
+              <p className="text-red-500 text-sm">{errors.firstName}</p>
+            )}
           </div>
           <div className="w-[48%]">
             <label htmlFor="lastName" className="block text-sm text-gray-400">
@@ -571,12 +631,19 @@ const BookingForm = ({
               type="text"
               name="lastName"
               value={formData.lastName}
-              onChange={handleChange}
+              onChange={(e) => {
+                handleChange(e);
+                handleValidation(e.target.name, e.target.value);
+              }}
               className="w-full bg-[#C1C2D3] text-black p-2 rounded-lg mt-1 placeholder-gray-500"
               placeholder="Last Name"
               required
               disabled={isDisabled}
+              onBlur={(e) => handleValidation(e.target.name, e.target.value)}
             />
+            {errors.lastName && (
+              <p className="text-red-500 text-sm">{errors.lastName}</p>
+            )}
           </div>
         </div>
 
@@ -589,12 +656,20 @@ const BookingForm = ({
             type="email"
             name="email"
             value={formData.email}
-            onChange={handleChange}
+            onChange={(e) => {
+              handleChange(e);
+              handleValidation(e.target.name, e.target.value);
+            }}
             className="w-full bg-[#C1C2D3] text-black p-2 rounded-lg mt-1 placeholder-gray-500"
             placeholder="Email"
             required
             disabled={isDisabled}
+            onBlur={(e) => handleValidation(e.target.name, e.target.value)}
           />
+          {/* display error */}
+          {errors.email && (
+            <p className="text-red-500 text-sm">{errors.email}</p>
+          )}
         </div>
 
         {/* Location */}
@@ -606,12 +681,19 @@ const BookingForm = ({
             type="text"
             name="location"
             value={formData.location}
-            onChange={handleChange}
+            onChange={(e) => {
+              handleChange(e);
+              handleValidation(e.target.name, e.target.value);
+            }}
             className="w-full bg-[#C1C2D3] text-black p-2 rounded-lg mt-1 placeholder-gray-500"
             placeholder="Event Location"
             required
             disabled={isDisabled}
+            onBlur={(e) => handleValidation(e.target.name, e.target.value)}
           />
+          {errors.location && (
+            <p className="text-red-500 text-sm">{errors.location}</p>
+          )}
         </div>
 
         {/* Genre/Theme */}
@@ -648,7 +730,10 @@ const BookingForm = ({
                   ? formData.genre
                   : formData.theme
               }
-              onChange={handleChange}
+              onChange={(e) => {
+                handleChange(e);
+                handleValidation(e.target.name, e.target.value);
+              }}
               className="w-full bg-[#C1C2D3] text-black p-2 rounded-lg mt-1 placeholder-gray-500"
               placeholder={
                 formData.genreThemeHolder === "Genre"
@@ -657,7 +742,14 @@ const BookingForm = ({
               }
               required
               disabled={isDisabled}
+              onBlur={(e) => handleValidation(e.target.name, e.target.value)}
             />
+            {formData.genreThemeHolder === "Genre" && errors.genre && (
+              <p className="text-red-500 text-sm">{errors.genre}</p>
+            )}
+            {formData.genreThemeHolder === "Theme" && errors.theme && (
+              <p className="text-red-500 text-sm">{errors.theme}</p>
+            )}
           </div>
         </div>
 
@@ -708,12 +800,12 @@ const BookingForm = ({
 
           <div className="w-[30%]">
             <label className="block text-sm text-gray-400">
-              No. of Keyboardist
+              No. of Melodics
             </label>
             <input
               type="number"
-              name="keyboardist"
-              value={formData.keyboardist}
+              name="melodics"
+              value={formData.melodics}
               onChange={handleChange}
               className="w-full bg-[#C1C2D3] text-black p-2 rounded-lg mt-1"
               required
@@ -736,6 +828,18 @@ const BookingForm = ({
             />
           </div>
         </div>
+
+        {/* Display Musician Error */}
+        {formData.percussionist === 0 &&
+          formData.melodics === 0 &&
+          formData.bassist === 0 &&
+          formData.vocalist === 0 &&
+          formData.guitarist === 0 &&
+          captchaVerified && (
+            <p className="text-red-500 text-sm mt-2 mb-4">
+              You need atleast one musician
+            </p>
+          )}
 
         {/* Description */}
         <div className="mb-6">
@@ -782,9 +886,9 @@ const BookingForm = ({
           <div className="mb-6">
             <ReCAPTCHA
               // test
-              // sitekey="6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI"
+              sitekey="6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI"
               // production
-              sitekey="6Ld7-ZMqAAAAAF7YrZhOzjlo4htz7PbAuT7MiJgo"
+              // sitekey="6Ld7-ZMqAAAAAF7YrZhOzjlo4htz7PbAuT7MiJgo"
               onChange={handleCaptchaVerify}
               aria-label="CAPTCHA verification"
             />
@@ -797,10 +901,6 @@ const BookingForm = ({
             // className="w-full bg-[#b70039] text-white py-2 rounded-lg cursor-pointer"
             className={`w-full py-2 rounded-lg ${buttonStyle}`}
             disabled={
-              // (isEditMode && !captchaVerified) || // CAPTCHA verification for edit mode
-              // (isDisabled && !isViewMode) || // Read-only form restriction
-              // !isMusiciansValid // At least one musician validation
-
               isViewMode
                 ? false // Always enable in view mode
                 : (isEditMode && !captchaVerified) || !isMusiciansValid

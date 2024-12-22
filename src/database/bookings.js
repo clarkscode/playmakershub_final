@@ -54,7 +54,7 @@ export const createBookingProcess = async (formData) => {
           guitarist: formData.guitarist,
           vocalist: formData.vocalist,
           bassist: formData.bassist,
-          keyboardist: formData.keyboardist,
+          melodics: formData.melodics,
           percussionist: formData.percussionist,
         },
       ])
@@ -108,6 +108,7 @@ export const adminCreateEventProcess = async (formData, adminName) => {
     if (bookingError) throw bookingError;
 
     const bookingId = bookingData[0]?.booking_id;
+    const bookingNumber = bookingData[0]?.book_number;
 
     // Step 2: Insert the event into the events table
     const { data: eventData, error: eventError } = await supabase
@@ -141,7 +142,7 @@ export const adminCreateEventProcess = async (formData, adminName) => {
           guitarist: formData.guitarist,
           vocalist: formData.vocalist,
           bassist: formData.bassist,
-          keyboardist: formData.keyboardist,
+          melodics: formData.melodics,
           percussionist: formData.percussionist,
         },
       ])
@@ -165,7 +166,7 @@ export const adminCreateEventProcess = async (formData, adminName) => {
     const emailBody = `
       Dear ${organizerName},
       <p>Your booking for the event titled "${formData.title}" has been successfully created!</p>
-      <p>Here is your booking ID: <strong>${bookingId}</strong></p>
+      <p>Here is your booking ID: <strong>${bookingNumber}</strong></p>
       <p>Please remember to keep this booking ID safe. You will need it if you want to make clarifications, updates, or cancellations for your booking.</p>
       <p>Best Regards,<br/>The Playmakers Family</p>
       <a href="https://www.playmakershub.org" target="_blank">www.playmakershub.org</a></p>

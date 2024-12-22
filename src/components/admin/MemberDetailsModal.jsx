@@ -4,9 +4,22 @@ import sendEmail from "../../database/sendEmail";
 import { toast } from "react-toastify";
 import { supabase } from "../../database/supabase";
 
+const predefinedRoles = [
+  "guitarist",
+  "vocalist",
+  "bassist",
+  "melodics",
+  "percussionist",
+];
+
 const MemberDetailsModal = ({ member, onClose, onUpdate, onDelete }) => {
   const [isEditing, setIsEditing] = useState(false);
-  const [editableMember, setEditableMember] = useState({ ...member });
+  const [editableMember, setEditableMember] = useState({
+    ...member,
+    bio: member.bio || "",
+    role: Array.isArray(member.role) ? member.role : [],
+  });
+  const [newRole, setNewRole] = useState("");
 
   useEffect(() => {
     // console.log("editable members data", editableMember);
@@ -21,6 +34,47 @@ const MemberDetailsModal = ({ member, onClose, onUpdate, onDelete }) => {
       document.removeEventListener("keydown", handleEsc);
     };
   }, [onClose]);
+
+  // Combine predefined roles with custom roles for display
+  const combinedRoles = [
+    ...new Set([
+      ...predefinedRoles,
+      ...(editableMember.role || []).filter(
+        (role) => !predefinedRoles.includes(role)
+      ),
+    ]),
+  ];
+
+  // Handle adding a new custom role
+  const handleAddCustomRole = () => {
+    if (newRole.trim() && !editableMember.role.includes(newRole.trim())) {
+      setEditableMember((prev) => ({
+        ...prev,
+        role: [...(prev.role || []), newRole.trim()],
+      }));
+      setNewRole("");
+    } else {
+      toast.error("Role is invalid or already added.");
+    }
+  };
+
+  // Handle role checkbox changes
+  const handleRoleChange = (role) => {
+    setEditableMember((prev) => {
+      const currentRoles = prev.role || [];
+      if (currentRoles.includes(role)) {
+        return {
+          ...prev,
+          role: currentRoles.filter((r) => r !== role),
+        };
+      } else {
+        return {
+          ...prev,
+          role: [...currentRoles, role],
+        };
+      }
+    });
+  };
 
   const handleClickOutside = (event) => {
     if (event.target.id === "modal-overlay") {
@@ -43,8 +97,8 @@ const MemberDetailsModal = ({ member, onClose, onUpdate, onDelete }) => {
   const handleSaveChanges = async () => {
     // Check if the status changes from probationary to active
     if (
-      editableMember.status === "active" &&
-      member.status === "probationary"
+      editableMember.status === "inactive" ||
+      (editableMember.status === "active" && member.status === "probationary")
     ) {
       try {
         // Delete all backout records for the user
@@ -116,6 +170,11 @@ const MemberDetailsModal = ({ member, onClose, onUpdate, onDelete }) => {
         <a href="https://www.communityhub.org" target="_blank">www.communityhub.org</a>`,
       };
 
+      const reminderWeb = `Dear ${member.name},
+        We noticed that your current status is ${member.status}.
+        Check our upcoming events and make a plan to participate.
+        - Playmakers Admin
+       `;
       console.log("Reminder message", reminderMessage);
       try {
         // Send email
@@ -138,7 +197,7 @@ const MemberDetailsModal = ({ member, onClose, onUpdate, onDelete }) => {
           .insert({
             notification_type: "reminder",
             user_id: member.id, // Assuming `member.id` maps to `user_id`
-            content: reminderMessage.message,
+            content: reminderWeb,
             sent_at: new Date(),
           });
 
@@ -212,9 +271,58 @@ const MemberDetailsModal = ({ member, onClose, onUpdate, onDelete }) => {
                   member.name
                 )}
               </h3>
-              {!isEditing && (
-                <div className="flex flex-wrap space-x-2 mt-2">
-                  {member.role.map((role, index) => (
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4 text-gray-800">
+            {/* Roles Section */}
+            <div className="mt-5">
+              {isEditing && (
+                <p className="font-semibold text-sm text-white">Roles:</p>
+              )}
+              {isEditing ? (
+                <>
+                  {/* Combined Roles Checklist */}
+                  <div className="space-y-1">
+                    {combinedRoles.map((role) => (
+                      <label
+                        key={role}
+                        className="flex items-center space-x-2 text-white"
+                      >
+                        <input
+                          type="checkbox"
+                          checked={(editableMember?.role || []).includes(role)}
+                          onChange={() => handleRoleChange(role)}
+                        />
+                        <span>{role}</span>
+                      </label>
+                    ))}
+                  </div>
+                  {/* Custom Role Input */}
+                  <div className="mt-2">
+                    <label className="block text-sm font-medium text-white">
+                      Add Custom Role:
+                    </label>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="text"
+                        value={newRole}
+                        onChange={(e) => setNewRole(e.target.value)}
+                        placeholder="Enter custom role"
+                        className="flex-1 bg-white text-gray-900 border rounded-md px-2 py-1"
+                      />
+                      <button
+                        className="px-3 py-1 bg-blue-500 text-white rounded-md"
+                        onClick={handleAddCustomRole}
+                      >
+                        Add
+                      </button>
+                    </div>
+                  </div>
+                </>
+              ) : (
+                <div className="flex flex-wrap gap-2">
+                  {(member?.role || []).map((role, index) => (
                     <span
                       key={index}
                       className="bg-white text-pink-700 px-2 py-1 rounded-full text-sm"
@@ -222,23 +330,6 @@ const MemberDetailsModal = ({ member, onClose, onUpdate, onDelete }) => {
                       {role}
                     </span>
                   ))}
-                </div>
-              )}
-              {isEditing && (
-                <div className="mt-2">
-                  <label className="block text-sm text-white">Roles</label>
-                  <input
-                    type="text"
-                    name="role"
-                    value={editableMember.role.join(", ")}
-                    onChange={(e) =>
-                      setEditableMember((prev) => ({
-                        ...prev,
-                        role: e.target.value.split(",").map((r) => r.trim()),
-                      }))
-                    }
-                    className="bg-white text-gray-900 border rounded-md px-2 py-1 w-full"
-                  />
                 </div>
               )}
             </div>

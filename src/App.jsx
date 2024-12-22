@@ -1,4 +1,4 @@
-import AdminLogin from "./authentication/admin/AdminLogin";
+// import AdminLogin from "./authentication/admin/AdminLogin";
 import { lazy, Suspense } from "react";
 // admin routes
 import AdminNotification from "./screens/admin/protectedRoutes/AdminNotification";
@@ -44,7 +44,7 @@ const App = () => {
           path="/homepage/events/published"
         />
         {/* playmakers admin */}
-        <Route element={<AdminLogin />} path="/adminonly" />
+        {/* <Route element={<AdminLogin />} path="/adminonly" /> */}
         <Route element={<AdminProtectedRoutes />}>
           <Route element={<Dashboard />} path="/admin/dashboard" />
           <Route

@@ -26,7 +26,7 @@ export const handleParticipation = async (
       {
         event_id: event.eventId,
         user_id: null,
-        notification_type: "web",
+        notification_type: "joined",
         content: `${user.name || "A user"} has joined the event '${
           event.event_title
         }'.`,

@@ -1,8 +1,9 @@
 import { useEffect, useState } from "react";
 import ReCAPTCHA from "react-google-recaptcha";
 import { toast } from "react-toastify";
-import { adminCreateEventProcess, supabase } from "../../../database/supabase";
+import { supabase } from "../../../database/supabase";
 import { useNavigate } from "react-router-dom";
+import { adminCreateEventProcess } from "../../../database/bookings";
 
 const CreateEventModal = ({ isOpen, onClose }) => {
   const [formData, setFormData] = useState({
@@ -25,7 +26,7 @@ const CreateEventModal = ({ isOpen, onClose }) => {
     guitarist: 0,
     vocalist: 0,
     bassist: 0,
-    keyboardist: 0,
+    melodics: 0,
     percussionist: 0,
   });
 
@@ -67,7 +68,7 @@ const CreateEventModal = ({ isOpen, onClose }) => {
         await supabase.auth.signOut();
         localStorage.removeItem("adminAuthToken");
         localStorage.removeItem("adminRefreshToken");
-        navigate("/adminonly"); // Redirect to login page
+        navigate("/member/login");
       }
     };
 
@@ -82,7 +83,7 @@ const CreateEventModal = ({ isOpen, onClose }) => {
       "guitarist",
       "vocalist",
       "bassist",
-      "keyboardist",
+      "melodics",
       "percussionist",
     ].includes(name)
       ? parseInt(value, 10) || 0 // Default to 0 if empty or invalid
@@ -128,13 +129,12 @@ const CreateEventModal = ({ isOpen, onClose }) => {
   };
 
   const validateMusicians = () => {
-    const { guitarist, vocalist, bassist, keyboardist, percussionist } =
-      formData;
+    const { guitarist, vocalist, bassist, melodics, percussionist } = formData;
     return (
       guitarist > 0 ||
       vocalist > 0 ||
       bassist > 0 ||
-      keyboardist > 0 ||
+      melodics > 0 ||
       percussionist > 0
     );
   };
@@ -508,7 +508,7 @@ const CreateEventModal = ({ isOpen, onClose }) => {
               "guitarist",
               "vocalist",
               "bassist",
-              "keyboardist",
+              "melodics",
               "percussionist",
             ].map((field, idx) => (
               <div key={idx}>
