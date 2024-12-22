@@ -64,9 +64,17 @@ const AuthenticatedHeader = () => {
         "postgres_changes",
         { event: "INSERT", schema: "public", table: "notifications" },
         (payload) => {
-          setNotifications((prev) => [payload.new, ...prev]);
-          setUnseenNotificationCount((prevCount) => prevCount + 1);
-          playNotificationSound();
+          console.log("New notification received:", payload.new);
+
+          // Filter notifications intended for the logged-in member
+          if (
+            payload.new.user_id === memberDetails?.id && // Ensure notification is for the current user
+            payload.new.event_id // Ensure notification is event-related
+          ) {
+            setNotifications((prev) => [payload.new, ...prev]);
+            setUnseenNotificationCount((prevCount) => prevCount + 1);
+            playNotificationSound();
+          }
         }
       )
       .subscribe();
