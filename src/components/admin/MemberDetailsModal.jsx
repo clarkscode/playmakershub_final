@@ -225,7 +225,7 @@ const MemberDetailsModal = ({ member, onClose, onUpdate, onDelete }) => {
       id="modal-overlay"
       onClick={handleClickOutside}
     >
-      <div className="bg-white rounded-lg w-full max-w-2xl">
+      <div className="bg-white rounded-lg w-full max-w-2xl max-h-full overflow-y-auto">
         {/* Header Section */}
         <div className="bg-gradient-to-r from-[#C2396C] to-[#5C1B33] px-5 py-5 rounded-t-lg text-white relative">
           <div className="flex justify-between items-start">

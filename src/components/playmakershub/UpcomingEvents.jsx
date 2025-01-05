@@ -131,6 +131,8 @@ const UpcomingEvents = () => {
     }
 
     // Step 2: Check if the member has already participated in this event
+    console.log("memberDetails", memberDetails.authid);
+    console.log("event id", event.event_id);
     const { data: existingParticipation, error: participationError } =
       await supabase
         .from("participation")
@@ -178,6 +180,7 @@ const UpcomingEvents = () => {
 
       if (statusError || !statusRequired) {
         toast.error("Failed to fetch status requirements for the event.");
+        console.log("error animal", statusError);
         console.error("Error fetching status_required:", statusError?.message);
         console.log("Error fetching status_required:", statusError?.message);
         console.log("event id ", event.event_id);

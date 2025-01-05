@@ -19,7 +19,7 @@ import {
   ListItemText,
   // ListSubheader,
 } from "@mui/material";
-import { FaBell, FaQuestion } from "react-icons/fa";
+import { FaQuestion } from "react-icons/fa";
 import CloseIcon from "@mui/icons-material/Close";
 import CodeIcon from "@mui/icons-material/Code";
 import WorkspacePremiumIcon from "@mui/icons-material/WorkspacePremium";
@@ -44,7 +44,7 @@ const AuthenticatedHeader = () => {
     newPassword: "",
   });
   const [isTooltipOpen, setIsTooltipOpen] = useState(false);
-  const [unseenNotificationCount, setUnseenNotificationCount] = useState(0);
+  const [notificationCount, setNotificationCount] = useState(0);
 
   const toggleTooltip = () => {
     setIsTooltipOpen((prevState) => !prevState);
@@ -54,6 +54,11 @@ const AuthenticatedHeader = () => {
   const isNewNotification = (sentAt) => {
     const elapsedTime = Date.now() - new Date(sentAt).getTime();
     return elapsedTime <= 15 * 60 * 1000; // 15 minutes in milliseconds
+  };
+
+  const handleNotificationClick = () => {
+    setNotificationCount(0);
+    // Optionally, you can also mark notifications as seen in the database here
   };
 
   // Real-time subscription for notifications
@@ -74,7 +79,7 @@ const AuthenticatedHeader = () => {
             // Ensure notification is for the current user
           ) {
             setNotifications((prev) => [payload.new, ...prev]);
-            setUnseenNotificationCount((prevCount) => prevCount + 1);
+
             playNotificationSound();
           }
         }
@@ -114,7 +119,6 @@ const AuthenticatedHeader = () => {
           setNotifications((prev) =>
             prev.map((notif) => ({ ...notif, is_seen: true }))
           );
-          setUnseenNotificationCount(0); // Reset badge count
         }
       }
     } catch (err) {
@@ -173,6 +177,25 @@ const AuthenticatedHeader = () => {
       console.error("Error fetching member details:", memberError.message);
       return;
     }
+
+    // Fetch the notification count for the logged-in user where is_seen is false
+    const { data: notificationsData, error: notificationsError } =
+      await supabase
+        .from("notifications")
+        .select("notification_id", { count: "exact" }) // Only select the id column and get the exact count
+        .eq("user_id", memberData?.id)
+        .eq("is_seen", false);
+
+    if (notificationsError) {
+      console.error(
+        "Error fetching notifications:",
+        notificationsError.message
+      );
+      return;
+    }
+
+    // Update the state with the notifications count
+    setNotificationCount(notificationsData.length);
 
     setUser(user);
     fetchMemberDetails(user?.id);
@@ -237,7 +260,8 @@ const AuthenticatedHeader = () => {
         .from("notifications")
         .select("*")
         .eq("user_id", authId)
-        .order("sent_at", { ascending: false }); // Order by most recent
+        .order("sent_at", { ascending: false });
+      // Order by most recent
 
       if (error) {
         console.error("Error fetching notifications:", error.message);
@@ -619,12 +643,13 @@ const AuthenticatedHeader = () => {
             <button
               onClick={() => {
                 toggleDrawer(true);
+                handleNotificationClick();
                 markNotificationsAsSeen();
               }}
               className="text-[#FFFFFF] text-2xl font-medium"
             >
               <Badge
-                badgeContent={unseenNotificationCount}
+                badgeContent={notificationCount}
                 color="error"
                 overlap="circular"
               >
