@@ -34,6 +34,7 @@ const BookingForm = ({
   const [isFeedbackSubmitted, setIsFeedbackSubmitted] = useState(false);
   const [eventID, setEventID] = useState(null); // State for event ID
   const [showFeedbackModal, setShowFeedbackModal] = useState(false);
+  const [availableMusicians, setAvailableMusicians] = useState({});
 
   // isOngoing
   const isPublished = status === "Published";
@@ -209,6 +210,33 @@ const BookingForm = ({
       checkFeedbackExists();
     }
   }, [eventID]);
+
+  useEffect(() => {
+    const fetchAvailableMusicians = async () => {
+      const { data, error } = await supabase
+        .from("members_orgs")
+        .select("role");
+
+      if (error) {
+        console.error("Error fetching available musicians:", error);
+      } else {
+        const musicianCounts = data.reduce((acc, member) => {
+          const roles = JSON.parse(member.role);
+          roles.forEach((role) => {
+            if (!acc[role]) {
+              acc[role] = 0;
+            }
+            acc[role]++;
+          });
+          return acc;
+        }, {});
+        setAvailableMusicians(musicianCounts);
+      }
+    };
+
+    fetchAvailableMusicians();
+  }, []);
+
   return (
     <div
       className="bg-[#36303C] p-8 rounded-lg shadow-lg w-2/4 h-4/5 overflow-y-scroll"
@@ -754,7 +782,7 @@ const BookingForm = ({
         </div>
 
         {/* Musicians */}
-        <div className="flex flex-wrap justify-between mb-4">
+        {/* <div className="flex flex-wrap justify-between mb-4">
           <div className="w-[30%]">
             <label className="block text-sm text-gray-400">
               No. of Guitarists
@@ -827,6 +855,31 @@ const BookingForm = ({
               disabled={isDisabled}
             />
           </div>
+        </div> */}
+
+        {/* Musicians */}
+        <div className="flex flex-wrap justify-between mb-4">
+          {Object.keys(availableMusicians).map((role) => (
+            <div className="w-[30%]" key={role}>
+              <label className="block text-sm text-gray-400">
+                No. of {role.charAt(0).toUpperCase() + role.slice(1)}s
+              </label>
+              <select
+                name={role}
+                value={formData[role]}
+                onChange={handleChange}
+                className="w-full bg-[#C1C2D3] text-black p-2 rounded-lg mt-1"
+                required
+                disabled={isDisabled}
+              >
+                {[...Array(availableMusicians[role] + 1).keys()].map((num) => (
+                  <option key={num} value={num}>
+                    {num}
+                  </option>
+                ))}
+              </select>
+            </div>
+          ))}
         </div>
 
         {/* Display Musician Error */}
@@ -886,9 +939,9 @@ const BookingForm = ({
           <div className="mb-6">
             <ReCAPTCHA
               // test
-              // sitekey="6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI"
+              sitekey="6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI"
               // production
-              sitekey="6Ld7-ZMqAAAAAF7YrZhOzjlo4htz7PbAuT7MiJgo"
+              // sitekey="6Ld7-ZMqAAAAAF7YrZhOzjlo4htz7PbAuT7MiJgo"
               onChange={handleCaptchaVerify}
               aria-label="CAPTCHA verification"
             />

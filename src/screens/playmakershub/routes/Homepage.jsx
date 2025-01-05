@@ -387,6 +387,7 @@ const Homepage = () => {
     try {
       // Call the booking process
       const result = await createBookingProcess(formData);
+      console.log("Booking Result:", result);
       // const bookingID = result.bookingData[0]?.booking_id;
       const bookNumber = result.bookingData[0]?.book_number;
 
