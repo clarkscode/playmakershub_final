@@ -130,7 +130,7 @@ const Sidebar = () => {
     localStorage.removeItem("adminAuthToken");
     sessionStorage.removeItem("adminAuthToken");
     // navigate("/adminonly"); already change this
-    navigate("/member/login");
+    navigate("/login");
   };
 
   // Mark "New Booking" notifications as seen
@@ -312,19 +312,15 @@ const Sidebar = () => {
         </li>
         <li>
           <Link
-            to="/member/login"
+            to="/login"
             className={`flex items-center py-3 px-4 text-md font-medium ${
-              location.pathname === "/member/login"
-                ? activeStyle
-                : inactiveStyle
+              location.pathname === "/login" ? activeStyle : inactiveStyle
             }`}
             onClick={handleLogout}
           >
             <LogoutIcon
               className={`mr-2 ${
-                location.pathname === "/member/login"
-                  ? "text-white"
-                  : "text-gray-500"
+                location.pathname === "/login" ? "text-white" : "text-gray-500"
               }`}
             />
             Logout

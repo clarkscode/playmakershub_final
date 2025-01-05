@@ -194,7 +194,7 @@ const Homepage = () => {
           <p>A new booking request titled "<strong>${eventName}</strong>" has been submitted.</p>
           <p>
             Please visit your admin dashboard to review the event. 
-            <a href="https://www.playmakershub.org/member/login" target="_blank">View Admin Dashboard</a>
+            <a href="https://www.playmakershub.org/login" target="_blank">View Admin Dashboard</a>
           </p>
           <p>Best Regards,<br>The Playmakers Family</p>
         `;

@@ -137,7 +137,7 @@ const AuthenticatedHeader = () => {
       // clear auth token of member if session is expired - jieclarkdev
       await supabase.auth.signOut();
       localStorage.removeItem("authToken");
-      navigate("/member/login");
+      navigate("/login");
     }
 
     const userMetadata = user?.user_metadata || {};

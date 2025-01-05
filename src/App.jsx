@@ -31,7 +31,7 @@ const App = () => {
       <Routes>
         {/* playmakershub */}
         <Route element={<Homepage />} path="/" />
-        <Route element={<MembersLogin />} path="/member/login" />
+        <Route element={<MembersLogin />} path="/login" />
         <Route element={<AboutUs />} path="/about-us" />
         <Route element={<Join />} path="/join" />
         <Route element={<ProtectedRoutes />}>

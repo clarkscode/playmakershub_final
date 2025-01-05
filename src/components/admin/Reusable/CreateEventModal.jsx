@@ -50,7 +50,7 @@ const CreateEventModal = ({ isOpen, onClose }) => {
         } = await supabase.auth.getUser();
 
         if (userError || !user) {
-          navigate("/member/login");
+          navigate("/login");
           return;
         }
 
@@ -60,7 +60,7 @@ const CreateEventModal = ({ isOpen, onClose }) => {
         const isSuperAdmin = userMetaData.is_super_admin || false;
 
         if (!isAdmin && !isSuperAdmin) {
-          navigate("/member/login");
+          navigate("/login");
           return;
         }
 
@@ -76,7 +76,7 @@ const CreateEventModal = ({ isOpen, onClose }) => {
         await supabase.auth.signOut();
         localStorage.removeItem("adminAuthToken");
         localStorage.removeItem("adminRefreshToken");
-        navigate("/member/login");
+        navigate("/login");
       }
     };
 

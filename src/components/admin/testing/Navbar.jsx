@@ -73,7 +73,7 @@ const Navbar = ({ isJoinEnabled, onPopupToggle, isAuthenticated }) => {
       ) : (
         <div className="flex-1 flex justify-end">
           <button
-            onClick={() => navigate("/member/login")}
+            onClick={() => navigate("/login")}
             className="font-poppins px-6 py-2 bg-[#992d5e] text-[#ffffff] text-md font-bold hover:bg-[#a83c70] rounded-full"
           >
             Login
