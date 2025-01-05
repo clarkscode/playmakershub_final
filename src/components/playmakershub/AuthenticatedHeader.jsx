@@ -68,8 +68,10 @@ const AuthenticatedHeader = () => {
 
           // Filter notifications intended for the logged-in member
           if (
-            payload.new.user_id === memberDetails?.id && // Ensure notification is for the current user
-            payload.new.event_id // Ensure notification is event-related
+            payload.new.user_id === memberDetails?.id &&
+            payload.new.event_id
+            // Ensure notification is event-related
+            // Ensure notification is for the current user
           ) {
             setNotifications((prev) => [payload.new, ...prev]);
             setUnseenNotificationCount((prevCount) => prevCount + 1);

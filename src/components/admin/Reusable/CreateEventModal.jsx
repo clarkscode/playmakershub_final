@@ -11,7 +11,7 @@ const CreateEventModal = ({ isOpen, onClose }) => {
     lastName: "",
     email: "",
     title: "",
-    eventType: "Department",
+    eventType: "Department", // Dropdown to toggle between "Department" and "Organization"
     eventTypeName: "",
     startDate: "",
     endDate: "",
@@ -30,16 +30,15 @@ const CreateEventModal = ({ isOpen, onClose }) => {
     percussionist: 0,
   });
 
+  const [errors, setErrors] = useState({});
   const [captchaVerified, setCaptchaVerified] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [errors, setErrors] = useState({
-    startTime: "",
-    endTime: "",
-  });
   const [adminName, setAdminName] = useState(null);
+  const [availableMusicians, setAvailableMusicians] = useState([]);
+  const [isFormValid, setIsFormValid] = useState(false);
+
+  const navigate = useNavigate();
 
   const today = new Date().toISOString().split("T")[0];
-  const navigate = useNavigate();
 
   // Fetch adminName from Supabase Auth when the component mounts
   useEffect(() => {
@@ -50,11 +49,21 @@ const CreateEventModal = ({ isOpen, onClose }) => {
           error: userError,
         } = await supabase.auth.getUser();
 
-        if (userError) throw new Error(userError.message);
-        if (!user) throw new Error("No authenticated user found.");
+        if (userError || !user) {
+          navigate("/member/login");
+          return;
+        }
 
         // Extract admin name from user_metadata
         const userMetaData = user.user_metadata || {};
+        const isAdmin = userMetaData.is_admin || false;
+        const isSuperAdmin = userMetaData.is_super_admin || false;
+
+        if (!isAdmin && !isSuperAdmin) {
+          navigate("/member/login");
+          return;
+        }
+
         const adminData = {
           first_name: userMetaData.first_name || "",
           last_name: userMetaData.last_name || "",
@@ -63,8 +72,7 @@ const CreateEventModal = ({ isOpen, onClose }) => {
 
         setAdminName(fetchedAdminName);
       } catch (error) {
-        // console.error("Error fetching admin name:", error);
-        toast.error("Session expired, redirecting to login");
+        console.error("Error fetching admin name:", error);
         await supabase.auth.signOut();
         localStorage.removeItem("adminAuthToken");
         localStorage.removeItem("adminRefreshToken");
@@ -72,202 +80,251 @@ const CreateEventModal = ({ isOpen, onClose }) => {
       }
     };
 
+    const fetchAvailableMusicians = async () => {
+      const { data, error } = await supabase
+        .from("members_orgs")
+        .select("role");
+
+      if (error) {
+        console.error("Error fetching available musicians:", error);
+      } else {
+        console.log("members_orgs data:", data);
+        const musicianCounts = data.reduce((acc, member) => {
+          const roles = JSON.parse(member.role);
+          roles.forEach((role) => {
+            if (!acc[role]) {
+              acc[role] = 0;
+            }
+            acc[role]++;
+          });
+          return acc;
+        }, {});
+        setAvailableMusicians(musicianCounts);
+      }
+    };
+
+    fetchAvailableMusicians();
     fetchAdminName();
   }, []);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
+    setFormData((prevData) => ({
+      ...prevData,
+      [name]: value,
+    }));
+    validateField(name, value);
+  };
 
-    // Convert numeric inputs to numbers
-    const newValue = [
-      "guitarist",
-      "vocalist",
-      "bassist",
-      "melodics",
-      "percussionist",
-    ].includes(name)
-      ? parseInt(value, 10) || 0 // Default to 0 if empty or invalid
-      : value;
+  const handleBlur = (e) => {
+    const { name, value } = e.target;
+    validateField(name, value);
+  };
 
-    setFormData((prev) => ({
-      ...prev,
-      [name]: newValue,
+  const handleGenreThemeChange = (e) => {
+    const { value } = e.target;
+    setFormData((prevData) => ({
+      ...prevData,
+      genreThemeHolder: value,
+      genre: value === "Genre" ? prevData.genre : "",
+      theme: value === "Theme" ? prevData.theme : "",
     }));
 
-    if ((name === "startTime" || name === "endTime") && formData.startDate) {
-      const now = new Date();
-      const [hours, minutes] = value.split(":").map(Number);
-      const selectedTime = new Date();
-      selectedTime.setHours(hours, minutes, 0, 0);
-
-      const updatedErrors = { ...errors };
-
-      if (
-        formData.startDate === now.toISOString().split("T")[0] &&
-        selectedTime < now
-      ) {
-        const currentTime = now.toLocaleTimeString([], {
-          hour: "2-digit",
-          minute: "2-digit",
-        });
-        updatedErrors[
-          name
-        ] = `You selected a past time. Please select a time after ${currentTime}.`;
-      } else if (
-        name === "endTime" &&
-        new Date(`${formData.startDate}T${formData.startTime}`) >=
-          new Date(`${formData.endDate}T${value}`)
-      ) {
-        updatedErrors.endTime =
-          "The end time must be later than the start time. Please adjust your selection.";
-      } else {
-        updatedErrors[name] = ""; // Clear error if valid
-      }
-
-      setErrors(updatedErrors);
-    }
+    validateField("genreThemeHolder", value);
   };
 
-  const validateMusicians = () => {
-    const { guitarist, vocalist, bassist, melodics, percussionist } = formData;
-    return (
-      guitarist > 0 ||
-      vocalist > 0 ||
-      bassist > 0 ||
-      melodics > 0 ||
-      percussionist > 0
-    );
+  const handleEventTypeChange = (e) => {
+    const { value } = e.target;
+    setFormData((prevData) => ({
+      ...prevData,
+      eventType: value,
+      eventTypeName: value === "Department" ? prevData.eventTypeName : "",
+    }));
+
+    validateField("eventType", value);
   };
 
-  const handleCaptchaVerify = () => {
-    setCaptchaVerified(true);
+  const handleCaptchaChange = (value) => {
+    setCaptchaVerified(!!value);
   };
 
-  const validateForm = () => {
-    const {
-      firstName,
-      lastName,
-      email,
-      title,
-      eventTypeName,
-      startDate,
-      endDate,
-      startTime,
-      endTime,
-      location,
-    } = formData;
+  const fieldLabels = {
+    firstName: "First Name",
+    lastName: "Last Name",
+    email: "Email",
+    title: "Title",
+    startDate: "Start Date",
+    eventType: "Event Type",
+    eventTypeName: "Event Type Name",
+    genreThemeHolder: "Genre/Theme",
+    endDate: "End Date",
+    startTime: "Start Time",
+    endTime: "End Time",
+    location: "Location",
+    description: "Description",
+    genre: "Genre",
+    theme: "Theme",
+  };
 
-    // Current date and time
-
+  const validateField = (name, value) => {
+    let error = "";
     const now = new Date();
     const currentDateString = now.toISOString().split("T")[0];
-    const updatedErrors = {};
     const currentTime = now.toLocaleTimeString([], {
       hour: "2-digit",
       minute: "2-digit",
     });
 
-    if (
-      !firstName ||
-      !lastName ||
-      !email ||
-      !title ||
-      !eventTypeName ||
-      !startDate ||
-      !endDate ||
-      !startTime ||
-      !endTime ||
-      !location
-    ) {
-      toast.error("Please fill out all required fields.");
-      return false;
+    switch (name) {
+      case "firstName":
+      case "lastName":
+      case "title":
+      case "eventTypeName":
+      case "location":
+      case "description":
+      case "genre":
+      case "genreThemeHolder":
+      case "theme":
+      case "eventType":
+        if (!value.trim()) {
+          error = `${fieldLabels[name]} is required.`;
+        }
+        break;
+      case "email":
+        if (!value.trim()) {
+          error = "Email is required.";
+        } else if (!value.endsWith("@ustp.edu.ph")) {
+          error = "Only @ustp.edu.ph email addresses are allowed.";
+        } else if (!validateEmail(value)) {
+          error = "Invalid email.";
+        }
+        break;
+      case "startDate":
+      case "endDate":
+        if (!value.trim()) {
+          error = `${fieldLabels[name]} is required.`;
+        } else if (value < currentDateString) {
+          error = "Cannot book on past days.";
+        }
+        break;
+      case "startTime":
+      case "endTime":
+        if (!value.trim()) {
+          error = `${name} is required.`;
+        } else {
+          const [hours, minutes] = value.split(":").map(Number);
+          if (hours < 9 || (hours === 21 && minutes > 0) || hours > 21) {
+            error = "Time must be between 9:00 AM and 9:00 PM.";
+          }
+        }
+        break;
+      default:
+        break;
     }
 
-    if (!email.endsWith("@ustp.edu.ph")) {
-      toast.error("Only @ustp.edu.ph email addresses are allowed.");
-      return false;
-    }
+    setErrors((prevErrors) => ({
+      ...prevErrors,
+      [name]: error,
+    }));
 
-    if (!validateMusicians()) {
-      toast.error(
-        "Please specify at least one musician (Guitarist, Vocalist, etc.)."
-      );
-      return false;
-    }
+    // Check if the form is valid
+    const updatedErrors = { ...errors, [name]: error };
+    const isValid = Object.values(updatedErrors).every((err) => !err);
+    setIsFormValid(isValid);
+  };
 
-    if (!captchaVerified) {
-      toast.error("Please verify the CAPTCHA.");
-      return false;
-    }
+  const validateEmail = (email) => {
+    const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return re.test(String(email).toLowerCase());
+  };
 
-    if (formData.startDate === currentDateString) {
-      const [startHours, startMinutes] = formData.startTime
-        .split(":")
-        .map(Number);
-      const startTimeDate = new Date();
-      startTimeDate.setHours(startHours, startMinutes, 0, 0);
-
-      if (startTimeDate < now) {
-        updatedErrors.startTime = `You selected a past time. Please select a time after ${currentTime}.`;
+  const validateForm = () => {
+    const updatedErrors = {};
+    Object.keys(formData).forEach((key) => {
+      validateField(key, formData[key]);
+      if (errors[key]) {
+        updatedErrors[key] = errors[key];
       }
-    }
-
-    if (formData.endDate === currentDateString) {
-      const [endHours, endMinutes] = formData.endTime.split(":").map(Number);
-      const endTimeDate = new Date();
-      endTimeDate.setHours(endHours, endMinutes, 0, 0);
-
-      if (endTimeDate < now) {
-        updatedErrors.endTime = `You selected a past time. Please select a time after ${currentTime}.`;
-      }
-    }
+    });
 
     if (
-      new Date(`${formData.startDate}T${formData.startTime}`) >
-      new Date(`${formData.endDate}T${formData.endTime}`)
+      !formData.guitarist &&
+      !formData.vocalist &&
+      !formData.bassist &&
+      !formData.melodics &&
+      !formData.percussionist
     ) {
-      updatedErrors.endTime =
-        "The end time must be later than the start time. Please adjust your selection.";
+      updatedErrors.musicians = "At least one musician is required.";
     }
 
     setErrors(updatedErrors);
-
-    return Object.keys(updatedErrors).length === 0; // Return true if no errors
+    return Object.keys(updatedErrors).length === 0;
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!validateForm()) return;
+    if (!validateForm()) {
+      return;
+    }
 
-    setLoading(true);
+    if (!captchaVerified) {
+      toast.error("Please verify the CAPTCHA.");
+      return;
+    }
 
-    try {
-      // Ensure adminName is available
-      if (!adminName) {
-        toast.error("Admin name not available. Please try again.");
-        setLoading(false);
-        return;
-      }
-      const { bookingData, eventData, musicianData } =
-        await adminCreateEventProcess(formData, adminName);
-      console.log(adminName);
-      console.log("booking data", bookingData);
-      console.log("event data", eventData);
-      console.log("musicians data", musicianData);
-
+    const success = await adminCreateEventProcess(formData, adminName);
+    if (success) {
       toast.success("Event created successfully!");
-      onClose(); // Close the modal
-    } catch (error) {
-      console.error("Error creating event:", error);
-      toast.error("An error occurred while creating the event.");
-    } finally {
-      setLoading(false);
+      onClose();
+    } else {
+      toast.error("Failed to create event.");
     }
   };
 
-  if (!isOpen) return null;
+  const fieldConfigurations = [
+    {
+      name: "firstName",
+      label: "First Name",
+      type: "text",
+      placeholder: "Enter first name",
+    },
+    {
+      name: "lastName",
+      label: "Last Name",
+      type: "text",
+      placeholder: "Enter last name",
+    },
+    {
+      name: "email",
+      label: "Email",
+      type: "email",
+      placeholder: "Enter email",
+    },
+    {
+      name: "title",
+      label: "Title",
+      type: "text",
+      placeholder: "Enter title",
+    },
+    { name: "startDate", label: "Start Date", type: "date" },
+    { name: "endDate", label: "End Date", type: "date" },
+    { name: "startTime", label: "Start Time", type: "time" },
+    { name: "endTime", label: "End Time", type: "time" },
+    {
+      name: "location",
+      label: "Location",
+      type: "text",
+      placeholder: "Enter location",
+    },
+    {
+      name: "description",
+      label: "Description",
+      type: "textarea",
+      placeholder: "Enter description",
+    },
+  ];
 
-  const canSubmit = validateMusicians();
+  if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
@@ -278,294 +335,151 @@ const CreateEventModal = ({ isOpen, onClose }) => {
             &times;
           </button>
         </div>
-
         <form onSubmit={handleSubmit}>
-          {/* Organizer's First Name and Last Name */}
-          <div className="flex flex-col md:flex-row md:space-x-4 mb-4">
-            <div className="w-1/2">
-              <label className="block text-sm font-medium text-gray-700">
-                First Name
-              </label>
-              <input
-                type="text"
-                name="firstName"
-                value={formData.firstName}
-                onChange={handleChange}
-                className="w-full border border-gray-300 rounded-lg p-2 mt-1"
-                placeholder="Enter first name"
-                required
-              />
-            </div>
-            <div className="w-1/2">
-              <label className="block text-sm font-medium text-gray-700">
-                Last Name
-              </label>
-              <input
-                type="text"
-                name="lastName"
-                value={formData.lastName}
-                onChange={handleChange}
-                className="w-full border border-gray-300 rounded-lg p-2 mt-1"
-                placeholder="Enter last name"
-                required
-              />
-            </div>
-          </div>
-
-          {/* Organizer's Email */}
           <div className="mb-4">
             <label className="block text-sm font-medium text-gray-700">
-              Email
+              Event Type
             </label>
-            <input
-              type="email"
-              name="email"
-              value={formData.email}
-              onChange={handleChange}
+            <select
+              name="eventType"
+              value={formData.eventType}
+              onChange={handleEventTypeChange}
+              onBlur={handleBlur}
               className="w-full border border-gray-300 rounded-lg p-2 mt-1"
-              placeholder="Enter organizer's email"
-              required
-            />
-          </div>
-
-          {/* Event Title */}
-          <div className="mb-4">
-            <label className="block text-sm font-medium text-gray-700">
-              Event Title
-            </label>
+            >
+              <option value="Department">Department</option>
+              <option value="Organization">Organization</option>
+            </select>
             <input
               type="text"
-              name="title"
-              value={formData.title}
+              name="eventTypeName"
+              value={formData.eventTypeName}
               onChange={handleChange}
+              onBlur={handleBlur}
               className="w-full border border-gray-300 rounded-lg p-2 mt-1"
-              placeholder="Enter event title"
-              required
+              placeholder={`Enter ${formData.eventType.toLowerCase()} name`}
             />
+            {errors.eventTypeName && (
+              <p className="text-red-500 text-sm mt-1">
+                {errors.eventTypeName}
+              </p>
+            )}
           </div>
-
-          {/* Event Type and Department/Organization */}
-          <div className="flex space-x-4 mb-4">
-            <div className="w-1/2">
-              <label className="block text-sm font-medium text-gray-700">
-                Event Type
-              </label>
-              <select
-                name="eventType"
-                value={formData.eventType}
-                onChange={handleChange}
-                className="w-full border border-gray-300 rounded-lg p-2 mt-1"
-                required
-              >
-                <option value="Department">Department</option>
-                <option value="Organization">Organization</option>
-              </select>
-            </div>
-            <div className="w-1/2">
-              <label className="block text-sm font-medium text-gray-700">
-                Department/Organization Name
-              </label>
-              <input
-                type="text"
-                name="eventTypeName"
-                value={formData.eventTypeName}
-                onChange={handleChange}
-                className="w-full border border-gray-300 rounded-lg p-2 mt-1"
-                placeholder="Enter name"
-                required
-              />
-            </div>
-          </div>
-
-          {/* Dates and Times */}
-          <div className="flex space-x-4 mb-4">
-            <div className="w-1/2">
-              <label className="block text-sm font-medium text-gray-700">
-                Start Date
-              </label>
-              <input
-                type="date"
-                name="startDate"
-                min={today}
-                value={formData.startDate}
-                onChange={handleChange}
-                className="w-full border border-gray-300 rounded-lg p-2 mt-1"
-                required
-              />
-            </div>
-            <div className="w-1/2">
-              <label className="block text-sm font-medium text-gray-700">
-                End Date
-              </label>
-              <input
-                type="date"
-                name="endDate"
-                min={formData.startDate || today}
-                value={formData.endDate}
-                onChange={handleChange}
-                className="w-full border border-gray-300 rounded-lg p-2 mt-1"
-                required
-              />
-            </div>
-          </div>
-          {/* start time and end time  */}
-          <div className="flex space-x-4 mb-4">
-            <div className="w-1/2">
-              <label className="block text-sm font-medium text-gray-700">
-                Start Time
-              </label>
-              <input
-                type="time"
-                name="startTime"
-                value={formData.startTime}
-                onChange={handleChange}
-                className="w-full border border-gray-300 rounded-lg p-2 mt-1"
-                required
-              />
-              {errors.startTime && (
-                <p className="text-sm text-red-600 mt-1">{errors.startTime}</p>
-              )}
-            </div>
-            <div className="w-1/2">
-              <label className="block text-sm font-medium text-gray-700">
-                End Time
-              </label>
-              <input
-                type="time"
-                name="endTime"
-                value={formData.endTime}
-                onChange={handleChange}
-                className="w-full border border-gray-300 rounded-lg p-2 mt-1"
-                required
-              />
-              {errors.endTime && (
-                <p className="text-sm text-red-600 mt-1">{errors.endTime}</p>
-              )}
-            </div>
-          </div>
-
-          {/* Location */}
           <div className="mb-4">
             <label className="block text-sm font-medium text-gray-700">
-              Location
+              Genre/Theme
             </label>
+            <select
+              name="genreThemeHolder"
+              value={formData.genreThemeHolder}
+              onChange={handleGenreThemeChange}
+              onBlur={handleBlur}
+              className="w-full border border-gray-300 rounded-lg p-2 mt-1"
+            >
+              <option value="Genre">Genre</option>
+              <option value="Theme">Theme</option>
+            </select>
             <input
               type="text"
-              name="location"
-              value={formData.location}
+              name={formData.genreThemeHolder.toLowerCase()}
+              value={formData[formData.genreThemeHolder.toLowerCase()]}
               onChange={handleChange}
+              onBlur={handleBlur}
               className="w-full border border-gray-300 rounded-lg p-2 mt-1"
-              placeholder="Enter location"
-              required
+              placeholder={`Enter ${formData.genreThemeHolder.toLowerCase()}`}
             />
+            {errors.genreTheme && (
+              <p className="text-red-500 text-sm mt-1">{errors.genreTheme}</p>
+            )}
           </div>
 
-          {/* Genre/Theme */}
-          <p className="text-sm text-gray-400 mb-2">
-            Genre: e.g Rock, Pop Music, Classical Music. <br />
-            Theme: e.g Unveil the Secrets, Throwback Friday.
-          </p>
-          <div className="flex space-x-4 mb-4">
-            <div className="w-1/3">
+          {fieldConfigurations.map((field) => (
+            <div className="mb-4" key={field.name}>
               <label className="block text-sm font-medium text-gray-700">
-                Genre/Theme
+                {field.label}
               </label>
-              <select
-                name="genreThemeHolder"
-                value={formData.genreThemeHolder}
-                onChange={handleChange}
-                className="w-full border border-gray-300 rounded-lg p-2 mt-1"
-              >
-                <option value="Genre">Genre</option>
-                <option value="Theme">Theme</option>
-              </select>
-            </div>
-            <div className="w-2/3">
-              <label className="block text-sm font-medium text-gray-700">
-                {formData.genreThemeHolder === "Genre" ? "Genre" : "Theme"}{" "}
-                Description
-              </label>
-              <input
-                type="text"
-                name={formData.genreThemeHolder === "Genre" ? "genre" : "theme"}
-                value={
-                  formData.genreThemeHolder === "Genre"
-                    ? formData.genre
-                    : formData.theme
-                }
-                onChange={handleChange}
-                className="w-full border border-gray-300 rounded-lg p-2 mt-1"
-                placeholder={`Enter ${
-                  formData.genreThemeHolder === "Genre" ? "genre" : "theme"
-                } description`}
-              />
-            </div>
-          </div>
-
-          {/* Musician Requirements */}
-          <div className="grid grid-cols-2 gap-4 mb-4">
-            {[
-              "guitarist",
-              "vocalist",
-              "bassist",
-              "melodics",
-              "percussionist",
-            ].map((field, idx) => (
-              <div key={idx}>
-                <label className="block text-sm font-medium text-gray-700">
-                  No. of {field.charAt(0).toUpperCase() + field.slice(1)}s
-                </label>
-                <input
-                  type="number"
-                  name={field}
-                  value={formData[field]}
+              {field.type === "textarea" ? (
+                <textarea
+                  name={field.name}
+                  value={formData[field.name]}
                   onChange={handleChange}
-                  min="0"
                   className="w-full border border-gray-300 rounded-lg p-2 mt-1"
+                  placeholder={field.placeholder}
                 />
-              </div>
-            ))}
-          </div>
+              ) : (
+                <input
+                  type={field.type}
+                  name={field.name}
+                  value={formData[field.name]}
+                  onChange={handleChange}
+                  className="w-full border border-gray-300 rounded-lg p-2 mt-1"
+                  placeholder={field.placeholder}
+                  onBlur={handleBlur}
+                  min={today}
+                />
+              )}
+              {errors[field.name] && (
+                <p className="text-red-500 text-sm mt-1">
+                  {errors[field.name]}
+                </p>
+              )}
+            </div>
+          ))}
 
-          {/* Description */}
-          <div className="mb-6">
-            <label className="block text-sm font-medium text-gray-700">
-              Description
-            </label>
-            <textarea
-              name="description"
-              value={formData.description}
-              onChange={handleChange}
-              className="w-full border border-gray-300 rounded-lg p-2 mt-1"
-              rows="4"
-              placeholder="Event description"
-            />
-          </div>
-
-          {/* CAPTCHA */}
-          {canSubmit && (
-            <div className="mb-6">
+          {Object.keys(availableMusicians).length > 0 && (
+            <div className="mb-4">
+              <label className="mb-2 block text-sm font-medium text-gray-700">
+                Select Available Musicians
+              </label>
+              {Object.keys(availableMusicians).map((role) => (
+                <div key={role} className="mb-2">
+                  <label className="block text-sm font-medium text-gray-700 capitalize">
+                    {role}
+                  </label>
+                  <select
+                    name={role}
+                    value={formData[role]}
+                    onChange={handleChange}
+                    onBlur={handleBlur}
+                    className="w-full border border-gray-300 rounded-lg p-2 mt-1"
+                  >
+                    {[...Array(availableMusicians[role] + 1).keys()].map(
+                      (num) => (
+                        <option key={num} value={num}>
+                          {num}
+                        </option>
+                      )
+                    )}
+                  </select>
+                  {errors[role] && (
+                    <p className="text-red-500 text-sm mt-1">{errors[role]}</p>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+          {isFormValid && (
+            <div className="mb-4">
               <ReCAPTCHA
-                // test
                 // sitekey="6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI"
                 // production
                 sitekey="6Ld7-ZMqAAAAAF7YrZhOzjlo4htz7PbAuT7MiJgo"
-                onChange={handleCaptchaVerify}
+                onChange={handleCaptchaChange}
               />
             </div>
           )}
 
-          <div>
+          <div className="flex justify-end">
             <button
               type="submit"
-              className={`w-full py-2 rounded-lg ${
-                canSubmit && captchaVerified
-                  ? "bg-blue-500 text-white"
-                  : "bg-gray-300 text-gray-600"
+              className={`px-4 py-2 rounded-lg shadow ${
+                isFormValid
+                  ? "bg-blue-500 text-white hover:bg-blue-600"
+                  : "bg-gray-300 text-gray-500 cursor-not-allowed"
               }`}
-              disabled={!canSubmit || !captchaVerified || loading}
+              disabled={!isFormValid}
             >
-              {loading ? "Creating Event..." : "Create Event"}
+              Create Event
             </button>
           </div>
         </form>

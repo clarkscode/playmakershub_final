@@ -367,11 +367,11 @@ const Homepage = () => {
     }
 
     // Email domain validation
-    // const emailDomain = formData.email.split("@")[1];
-    // if (emailDomain !== "ustp.edu.ph") {
-    //   toast.error("You are not allowed to book.");
-    //   return;
-    // }
+    const emailDomain = formData.email.split("@")[1];
+    if (emailDomain !== "ustp.edu.ph") {
+      toast.error("You are not allowed to book.");
+      return;
+    }
 
     // Check if CAPTCHA is verified
     if (!captchaVerified) {

@@ -91,6 +91,20 @@ const MemberForm = ({
     }
   };
 
+  const checkEmailExists = async (email) => {
+    const { data, error } = await supabase
+      .from("members_orgs")
+      .select("email")
+      .eq("email", email);
+
+    if (error) {
+      console.error("Error checking email:", error);
+      return false;
+    }
+
+    return data.length > 0;
+  };
+
   // Handle adding a custom role
   const handleAddCustomRole = () => {
     if (newRole) {
@@ -178,7 +192,10 @@ const MemberForm = ({
       validationErrors.email = VALIDATION_ERRORS.EMAIL_REQUIRED;
     } else if (!validateEmail(email)) {
       validationErrors.email = VALIDATION_ERRORS.EMAIL_INVALID;
+    } else if (await checkEmailExists(email)) {
+      validationErrors.email = "Conflict email";
     }
+
     if (!mobile) {
       validationErrors.mobile = VALIDATION_ERRORS.PHONE_REQUIRED;
     } else if (!validatePhoneNumber(mobile)) {
