@@ -24,7 +24,7 @@ const Navbar = ({ isJoinEnabled, onPopupToggle, isAuthenticated }) => {
           About
         </button>
         <button
-          onClick={() => navigate("/homepage/events/published")}
+          onClick={() => navigate("/events/published")}
           className="text-[#FFFFFF] text-2xl font-medium hover:text-[#a83c70]"
         >
           Events
@@ -111,7 +111,7 @@ const Navbar = ({ isJoinEnabled, onPopupToggle, isAuthenticated }) => {
           About
         </button>
         <button
-          onClick={() => navigate("/homepage/events/published")}
+          onClick={() => navigate("/events/published")}
           className="text-white text-2xl font-medium hover:text-[#a83c70] mb-2"
         >
           Events

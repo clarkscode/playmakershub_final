@@ -4,41 +4,6 @@ import { playmakersLogo } from "../../assets";
 import { useNavigate } from "react-router-dom";
 
 const MembersLogin = () => {
-  // const [email, setEmail] = useState("");
-  // const [password, setPassword] = useState("");
-  // const [errorMessage, setErrorMessage] = useState("");
-  // const [loading, setLoading] = useState(false);
-  // const navigate = useNavigate();
-
-  // useEffect(() => {
-  //   const token = localStorage.getItem("authToken");
-  //   if (token) {
-  //     navigate("/playmakershub");
-  //   }
-  // }, [navigate]);
-
-  // const handleLogin = async (e) => {
-  //   e.preventDefault();
-  //   setLoading(true);
-
-  //   const { data, error } = await supabase.auth.signInWithPassword({
-  //     email,
-  //     password,
-  //   });
-
-  //   setLoading(false);
-
-  //   if (error) {
-  //     setErrorMessage(error.message);
-  //     return;
-  //   }
-  //   // console.log(data.session.access_token);
-  //   if (data.session.access_token) {
-  //     localStorage.setItem("authToken", data.session.access_token);
-  //     navigate("/playmakershub");
-  //   }
-  // };
-
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
@@ -72,7 +37,20 @@ const MembersLogin = () => {
     setLoading(false);
 
     if (error) {
-      setErrorMessage(error.message || "Invalid credentials");
+      // Check for network error
+      if (
+        !navigator.onLine ||
+        error.message?.includes("network") ||
+        error.name === "FetchError"
+      ) {
+        console.log(error.message);
+        console.log(navigator.onLine);
+        console.log(error.name);
+        setErrorMessage("Network error: Please check your internet connection");
+      } else {
+        setErrorMessage(error.message || "Invalid credentials");
+      }
+      console.log(error.message);
       return;
     }
 

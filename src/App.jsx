@@ -39,10 +39,7 @@ const App = () => {
           <Route element={<UpcomingEvents />} path="/events/upcoming" />
           <Route element={<Events />} path="/events" />
         </Route>
-        <Route
-          element={<Unauthenticated />}
-          path="/homepage/events/published"
-        />
+        <Route element={<Unauthenticated />} path="/events/published" />
         {/* playmakers admin */}
         {/* <Route element={<AdminLogin />} path="/adminonly" /> */}
         <Route element={<AdminProtectedRoutes />}>

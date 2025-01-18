@@ -379,7 +379,7 @@ const EventCard = ({
         <p>Dear ${organizerFullname},</p>
         <p>Your booked event "<strong>${eventTitle}</strong>" has now been reviewed and published by Playmakers Administrators.</p>
         <p>You can now view your booked event with its fellow participants at the following link: 
-        <a href="https://www.playmakershub.org/homepage/events/published" target="_blank">https://www.playmakershub.org/homepage/events/published</a></p>
+        <a href="https://www.playmakershub.org/events/published" target="_blank">https://www.playmakershub.org/events/published</a></p>
         <p>Thank you for reaching out to Playmakers - USTP, may you have a wonderful and smooth sailing event!</p>
         <p>Best Regards,<br/>The Playmakers Family<br/>
         <a href="https://www.playmakershub.org" target="_blank">www.playmakershub.org</a></p>

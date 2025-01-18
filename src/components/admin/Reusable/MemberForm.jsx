@@ -193,7 +193,7 @@ const MemberForm = ({
     } else if (!validateEmail(email)) {
       validationErrors.email = VALIDATION_ERRORS.EMAIL_INVALID;
     } else if (await checkEmailExists(email)) {
-      validationErrors.email = "Conflict email";
+      validationErrors.email = "Email already exists.";
     }
 
     if (!mobile) {
